@@ -1,0 +1,25 @@
+<div id="tab-content-1" class="tab-content">
+  <div id="calendar-container">
+    <select id="month-select">
+        <option value="1">January</option>
+        <option value="2">February</option>
+        <!-- additional options for other months -->
+    </select>
+    <table id="calendar">
+      <thead>
+        <tr>
+          <th>Sun</th>
+          <th>Mon</th>
+          <th>Tue</th>
+          <th>Wed</th>
+          <th>Thu</th>
+          <th>Fri</th>
+          <th>Sat</th>
+        </tr>
+      </thead>
+      <tbody id="calendar-body">
+        <!-- calendar cells will be added here by JavaScript -->
+      </tbody>
+    </table>
+  </div>
+</div>
