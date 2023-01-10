@@ -1,3 +1,56 @@
+<div id="tabs">
+  <button class="tab-button" id="tab-button-1">Tab 1</button>
+  <button class="tab-button" id="tab-button-2">Tab 2</button>
+
+  <div id="tab-content-1" class="tab-content">
+    <!-- content for tab 1 goes here -->
+  </div>
+  <div id="tab-content-2" class="tab-content">
+    <!-- content for tab 2 goes here -->
+  </div>
+</div>
+#tabs {
+  display: flex;
+}
+
+.tab-button {
+  flex: 1;
+  text-align: center;
+  padding: 10px;
+  border: none;
+  background-color: #ccc;
+  cursor: pointer;
+}
+
+.tab-button.active {
+  background-color: #ddd;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+const tabButtons = document.querySelectorAll('.tab-button');
+const tabContents = document.querySelectorAll('.tab-content');
+
+function handleTabClick(event) {
+  // Remove active class from all tab buttons and tab contents
+  tabButtons.forEach(button => button.classList.remove('active'));
+  tabContents.forEach(content => content.classList.remove('active'));
+
+  // Add active class to the clicked tab button and corresponding tab content
+  event.target.classList.add('active');
+  const tabContentId = event.target.id.replace('tab-button-', 'tab-content-');
+  document.getElementById(tabContentId).classList.add('active');
+}
+
+tabButtons.forEach(button => button.addEventListener('click', handleTabClick));
+
+
+
 <div id="tab-content-1" class="tab-content">
   <div id="calendar-container">
     <select id="month-select">
@@ -23,3 +76,48 @@
     </table>
   </div>
 </div>
+
+
+const monthSelect = document.getElementById("month-select");
+const calendarBody = document.getElementById("calendar-body");
+
+function renderCalendar(month, year) {
+    // Clear existing calendar cells
+    calendarBody.innerHTML = "";
+    
+    // Create a new date object for the selected month and year
+    const date = new Date(year, month - 1);
+    
+    // Get the number of days in the month
+    const daysInMonth = new Date(year, month, 0).getDate();
+    
+    // Get the day of the week that the month starts on (0 = Sunday, 1 = Monday, etc.)
+    const startDay = date.getDay();
+    
+    // Create a new table row for the calendar
+    let row = document.createElement("tr");
+    calendarBody.appendChild(row);
+
+    // Add blank cells for the days of the week before the start of the month
+    for (let i = 0; i < startDay; i++) {
+        let cell = document.createElement("td");
+        row.appendChild(cell);
+    }
+
+    // Add cells for the days of the month
+    for (let i = 1; i <= daysInMonth; i++) {
+        if (row.childNodes.length === 7) {
+            row = document.createElement("tr");
+            calendarBody.appendChild(row);
+        }
+        let cell = document.createElement("td");
+        cell.innerHTML = i;
+        row.appendChild(cell);
+    }
+}
+
+// get the current month and year
+let today = new Date();
+let currentMonth = today.getMonth()+1;
+let currentYear = today.getFullYear();
+
