@@ -1,123 +1,41 @@
-<div id="tabs">
-  <button class="tab-button" id="tab-button-1">Tab 1</button>
-  <button class="tab-button" id="tab-button-2">Tab 2</button>
+# Create a webdriver instance
+driver = webdriver.Firefox()
 
-  <div id="tab-content-1" class="tab-content">
-    <!-- content for tab 1 goes here -->
-  </div>
-  <div id="tab-content-2" class="tab-content">
-    <!-- content for tab 2 goes here -->
-  </div>
-</div>
-#tabs {
-  display: flex;
-}
+# Navigate to the desired webpage
+driver.get("https://www.example.com")
 
-.tab-button {
-  flex: 1;
-  text-align: center;
-  padding: 10px;
-  border: none;
-  background-color: #ccc;
-  cursor: pointer;
-}
+# Find all elements on the page
+elements = driver.find_elements(By.XPATH, '//*')
 
-.tab-button.active {
-  background-color: #ddd;
-}
+# Create an empty graph
+graph = {}
 
-.tab-content {
-  display: none;
-}
+# Loop through the elements
+for element in elements:
+    # Get the element's location
+    location = element.location
+    # Get the element's size
+    size = element.size
 
-.tab-content.active {
-  display: block;
-}
-const tabButtons = document.querySelectorAll('.tab-button');
-const tabContents = document.querySelectorAll('.tab-content');
+    # check if the location of the element is adjacent to any other element
+    for other_element in elements:
+        other_location = other_element.location
+        other_size = other_element.size
+        # check if the elements are adjacent
+        if (location['x'] == other_location['x'] and abs(location['y'] - other_location['y']) == size['height'] and location['x'] + size['width'] == other_location['x'] + other_size['width']) or (location['y'] == other_location['y'] and abs(location['x'] - other_location['x']) == size['width'] and location['y'] + size['height'] == other_location['y'] + other_size['height']):
+            # If the elements are adjacent, create an edge between them
+            if element not in graph:
+                graph[element] = []
+            graph[element].append(other_element)
+    # check if the element is inside another element
+    for other_element in elements:
+        other_location = other_element.location
+        other_size = other_element.size
+        if location['x'] > other_location['x'] and location['y'] > other_location['y'] and location['x'] + size['width'] < other_location['x'] + other_size['width'] and location['y'] + size['height'] < other_location['y'] + other_size['height']:
+            # If the element is inside another element, create an edge between them
+            if element not in graph:
+                graph[element] = []
+            graph[element].append(other_element)
 
-function handleTabClick(event) {
-  // Remove active class from all tab buttons and tab contents
-  tabButtons.forEach(button => button.classList.remove('active'));
-  tabContents.forEach(content => content.classList.remove('active'));
-
-  // Add active class to the clicked tab button and corresponding tab content
-  event.target.classList.add('active');
-  const tabContentId = event.target.id.replace('tab-button-', 'tab-content-');
-  document.getElementById(tabContentId).classList.add('active');
-}
-
-tabButtons.forEach(button => button.addEventListener('click', handleTabClick));
-
-
-
-<div id="tab-content-1" class="tab-content">
-  <div id="calendar-container">
-    <select id="month-select">
-        <option value="1">January</option>
-        <option value="2">February</option>
-        <!-- additional options for other months -->
-    </select>
-    <table id="calendar">
-      <thead>
-        <tr>
-          <th>Sun</th>
-          <th>Mon</th>
-          <th>Tue</th>
-          <th>Wed</th>
-          <th>Thu</th>
-          <th>Fri</th>
-          <th>Sat</th>
-        </tr>
-      </thead>
-      <tbody id="calendar-body">
-        <!-- calendar cells will be added here by JavaScript -->
-      </tbody>
-    </table>
-  </div>
-</div>
-
-
-const monthSelect = document.getElementById("month-select");
-const calendarBody = document.getElementById("calendar-body");
-
-function renderCalendar(month, year) {
-    // Clear existing calendar cells
-    calendarBody.innerHTML = "";
-    
-    // Create a new date object for the selected month and year
-    const date = new Date(year, month - 1);
-    
-    // Get the number of days in the month
-    const daysInMonth = new Date(year, month, 0).getDate();
-    
-    // Get the day of the week that the month starts on (0 = Sunday, 1 = Monday, etc.)
-    const startDay = date.getDay();
-    
-    // Create a new table row for the calendar
-    let row = document.createElement("tr");
-    calendarBody.appendChild(row);
-
-    // Add blank cells for the days of the week before the start of the month
-    for (let i = 0; i < startDay; i++) {
-        let cell = document.createElement("td");
-        row.appendChild(cell);
-    }
-
-    // Add cells for the days of the month
-    for (let i = 1; i <= daysInMonth; i++) {
-        if (row.childNodes.length === 7) {
-            row = document.createElement("tr");
-            calendarBody.appendChild(row);
-        }
-        let cell = document.createElement("td");
-        cell.innerHTML = i;
-        row.appendChild(cell);
-    }
-}
-
-// get the current month and year
-let today = new Date();
-let currentMonth = today.getMonth()+1;
-let currentYear = today.getFullYear();
-
+# Close the webdriver
+driver.quit()
