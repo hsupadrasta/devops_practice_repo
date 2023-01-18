@@ -1,84 +1,78 @@
-from selenium import webdriver
-impor<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    .image-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .image-icon {
-      width: 100px;
-      height: 100px;
-      object-fit: cover;
-    }
-    .expanded-image {
-      display: none;
-      position: fixed;
-      top: 0;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      margin: auto;
-      z-index: 1;
-    }
-    .overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background-color: rgba(0, 0, 0, 0.7);
-      z-index: 0;
-    }
-  </style>
-</head>
-<body onload="loadImages()">
-  <div class="image-container">
-  </div>
-  <img class="expanded-image" onclick="closeImage()" />
-  <div class="overlay" onclick="closeImage()"></div>
-  <script>
-    function loadImages() {
-      var folderPath = "path/to/folder";
-      var imageContainer = document.querySelector(".image-container");
-      for (let file of filesInFolder(folderPath)) {
-        if (file.endsWith(".jpg") || file.endsWith(".png")) {
-          var image = document.createElement("img");
-          image.classList.add("image-icon");
-          image.src = folderPath + "/" + file;
-          image.onclick = function() { expandImage(this); };
-          imageContainer.appendChild(image);
-        }
-      }
-    }
+import os
+from tkinter import Tk, Label, Button, Canvas
+from PIL import ImageTk, Image
 
-    function filesInFolder(folderPath) {
-        var files = [];
-        var fileNames = new XMLHttpRequest();
-        fileNames.open("GET", folderPath, false);
-        fileNames.send();
-        var fileList = fileNames.responseText.split("\n");
-        for (var i = 0; i < fileList.length; i++) {
-            if (fileList[i].length > 0) {
-                files.push(fileList[i]);
-            }
-        }
-        return files;
-    }
+class ImageViewer:
+    def __init__(self, root, folder_path):
+        self.root = root
+        self.folder_path = folder_path
+        self.images = []
+        self.current_image = None
+        self.load_images()
+        self.create_widgets()
 
-    function expandImage(image) {
-      var expandedImage = document.querySelector(".expanded-image");
-      expandedImage.src = image.src;
-      expandedImage.style.display = "block";
-      document.querySelector(".overlay").style.display = "block";
-    }
-    function closeImage() {
-      document.querySelector(".expanded-image").style.display = "none";
-      document.querySelector(".overlay").style.display = "none";
-    }
-  </script>
-</body>
-</html>
+    def load_images(self):
+        for file in os.listdir(self.folder_path):
+            if file.endswith(".jpg") or file.endswith(".png"):
+                self.images.append(file)
+        self.images.sort()
+
+    def create_widgets(self):
+        self.canvas = Canvas(self.root)
+        self.canvas.grid(row=0, column=0)
+        self.display_images()
+        self.create_close_button()
+
+    def display_images(self):
+        x = self.canvas.winfo_width()/2-100
+        y = self.canvas.winfo_height()/2-100
+        for image_name in self.images:
+            image = Image.open(self.folder_path + "/" + image_name)
+            image.thumbnail((100, 100))
+            photo = ImageTk.PhotoImage(image)
+            label = Label(self.canvas, image=photo, width=100, height=100)
+            label.image = photo
+            label.bind("<Button-1>", self.display_image)
+            self.canvas.create_window(x, y, window=label)
+            x += 120
+            if x > self.canvas.winfo_width()/2+100:
+                x = self.canvas.winfo_width()/2-100
+                y += 120
+
+     def display_image(self, event):
+        self.current_image = Image.open(self.folder_path + "/" + event.widget.image_name)
+        self.canvas.delete("all")
+        photo = ImageTk.PhotoImage(self.current_image)
+        self.canvas.create_image(self.canvas.winfo_width()/2, self.canvas.winfo_height()/2, image=photo, anchor="center")
+        self.create_close_button()
+        
+    def create_close_button(self):
+        close_button = Button(self.canvas, text="Close", command=self.close_image)
+        self.canvas.create_window(self.canvas.winfo_width()/2, self.canvas.winfo_height()-20, window=close_button)
+
+    def close_image(self):
+        self.current_image = None
+        self.canvas.delete("all")
+        self.display_images()
+
+if __name__ == "__main__":
+    root = Tk()
+    folder_path = "path/to/folder"
+    viewer = ImageViewer(root, folder_path)
+    root.mainloop()
+    def display_images(self):
+        x = self.canvas.winfo_width()/2-100
+        y = self.canvas.winfo_height()/2-100
+        for image_name in self.images:
+            image = Image.open(self.folder_path + "/" + image_name)
+            image.thumbnail((100, 100))
+            photo = ImageTk.PhotoImage(image)
+            label = Label(self.canvas, image=photo, width=100, height=100)
+            label.image = photo
+            label.image_name = image_name 
+            label.bind("<Button-1>", self.display_image)
+            self.canvas.create_window(x, y, window=label)
+            x += 120
+            if x > self.canvas.winfo_width()/2+100:
+                x = self.canvas.winfo_width()/2-100
+                y += 120
