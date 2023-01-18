@@ -1,52 +1,84 @@
 from selenium import webdriver
-import networkx as nx
+impor<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .image-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .image-icon {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+    }
+    .expanded-image {
+      display: none;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      margin: auto;
+      z-index: 1;
+    }
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 0;
+    }
+  </style>
+</head>
+<body onload="loadImages()">
+  <div class="image-container">
+  </div>
+  <img class="expanded-image" onclick="closeImage()" />
+  <div class="overlay" onclick="closeImage()"></div>
+  <script>
+    function loadImages() {
+      var folderPath = "path/to/folder";
+      var imageContainer = document.querySelector(".image-container");
+      for (let file of filesInFolder(folderPath)) {
+        if (file.endsWith(".jpg") || file.endsWith(".png")) {
+          var image = document.createElement("img");
+          image.classList.add("image-icon");
+          image.src = folderPath + "/" + file;
+          image.onclick = function() { expandImage(this); };
+          imageContainer.appendChild(image);
+        }
+      }
+    }
 
-# access webpage
-driver = webdriver.Firefox()
-driver.get("https://www.example.com")
+    function filesInFolder(folderPath) {
+        var files = [];
+        var fileNames = new XMLHttpRequest();
+        fileNames.open("GET", folderPath, false);
+        fileNames.send();
+        var fileList = fileNames.responseText.split("\n");
+        for (var i = 0; i < fileList.length; i++) {
+            if (fileList[i].length > 0) {
+                files.push(fileList[i]);
+            }
+        }
+        return files;
+    }
 
-# retrieve all elements on webpage
-elements = driver.find_elements_by_tag_name("*")
-
-# create graph object
-G = nx.Graph()
-
-# add elements as nodes in graph
-for element in elements:
-    G.add_node(element)
-
-# check location of elements and create edges
-for i in range(len(elements)):
-    for j in range(i+1, len(elements)):
-        element1 = elements[i]
-        element2 = elements[j]
-        if is_adjacent(element1, element2):
-            G.add_edge(element1, element2)
-        if is_inside(element1, element2):
-            G.add_edge(element1, element2)
-
-# visualize and analyze graph
-nx.draw(G)
-nx.info(G)
-def is_adjacent(element1, element2):
-    # get coordinates and dimensions of element 1
-    x1, y1, width1, height1 = element1.location['x'], element1.location['y'], element1.size['width'], element1.size['height']
-    # get coordinates and dimensions of element 2
-    x2, y2, width2, height2 = element2.location['x'], element2.location['y'], element2.size['width'], element2.size['height']
-    # check if element 1 and element 2 are adjacent horizontally
-    if (x1 + width1 == x2 or x2 + width2 == x1) and (y1 < y2 + height2 and y1 + height1 > y2):
-        return True
-    # check if element 1 and element 2 are adjacent vertically
-    if (y1 + height1 == y2 or y2 + height2 == y1) and (x1 < x2 + width2 and x1 + width1 > x2):
-        return True
-    return False
-
-def is_inside(element1, element2):
-    # get coordinates and dimensions of element 1
-    x1, y1, width1, height1 = element1.location['x'], element1.location['y'], element1.size['width'], element1.size['height']
-    # get coordinates and dimensions of element 2
-    x2, y2, width2, height2 = element2.location['x'], element2.location['y'], element2.size['width'], element2.size['height']
-    # check if element 1 is inside element 2
-    if x1 > x2 and y1 > y2 and x1 + width1 < x2 + width2 and y1 + height1 < y2 + height2:
-        return True
-    return False
+    function expandImage(image) {
+      var expandedImage = document.querySelector(".expanded-image");
+      expandedImage.src = image.src;
+      expandedImage.style.display = "block";
+      document.querySelector(".overlay").style.display = "block";
+    }
+    function closeImage() {
+      document.querySelector(".expanded-image").style.display = "none";
+      document.querySelector(".overlay").style.display = "none";
+    }
+  </script>
+</body>
+</html>
