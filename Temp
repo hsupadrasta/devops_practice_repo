@@ -1,16 +1,71 @@
-    def display_images(self):
-        x = self.canvas.winfo_width()/2-100
-        y = self.canvas.winfo_height()/2-100
-        for image_name in self.images:
-            image = Image.open(self.folder_path + "/" + image_name)
-            image.thumbnail((100, 100))
-            photo = ImageTk.PhotoImage(image)
-            label = Label(self.canvas, image=photo, width=100, height=100)
-            label.image = photo
-            label.image_name = image_name 
-            label.bind("<Button-1>", self.display_image)
-            self.canvas.create_window(x, y, window=label)
-            x += 120
-            if x > self.canvas.winfo_width()/2+100:
-                x = self.canvas.winfo_width()/2-100
-                y += 120
+import networkx as nx
+import win32com.client
+
+# Initialize the Outlook application
+outlook = win32com.client.Dispatch("Outlook.Application")
+
+# Replace with the email address of the manager
+manager_email = 'manager@example.com'
+
+# Create an empty NetworkX graph
+G = nx.Graph()
+
+def add_employee_nodes(manager_email):
+    # Get the recipient object for the manager's email address
+    recipient = outlook.Session.CreateRecipient(manager_email)
+
+    # Resolve the recipient
+    recipient.Resolve()
+
+    # Check if the recipient has been resolved
+    if recipient.Resolved:
+        # Get the manager's Exchange user object
+        manager_user = recipient.AddressEntry.GetExchangeUser()
+
+        # Add the manager as a node in the graph with a different color
+        G.add_node(manager_email, label=manager_user.Name, node_type='manager')
+
+        # Get the manager's direct reports (employees)
+        direct_reports = manager_user.GetDirectReports()
+
+        # Check if the manager has direct reports
+        if direct_reports:
+            # Loop through the direct reports and add nodes and edges
+            for report in direct_reports:
+                report_email = report.PrimarySmtpAddress
+                report_user = report.GetExchangeUser()
+
+                # Add the employee as a node in the graph
+                G.add_node(report_email, label=report_user.Name, node_type='employee')
+
+                # Add an edge between the manager and the employee
+                G.add_edge(manager_email, report_email)
+
+                # Recursively add nodes for the employee's direct reports
+                add_employee_nodes(report_email)
+        else:
+            # If the manager has no direct reports, display them differently
+            G.nodes[manager_email]['node_type'] = 'manager_no_reports'
+
+# Start adding nodes and edges from the manager
+add_employee_nodes(manager_email)
+
+# Define node colors based on node type
+node_colors = {
+    'manager': 'blue',
+    'employee': 'green',
+    'manager_no_reports': 'red',
+}
+
+# Draw the graph with different node colors based on node type
+pos = nx.spring_layout(G)  # Define the layout for the graph
+labels = nx.get_node_attributes(G, 'label')  # Get the labels for the nodes
+node_types = nx.get_node_attributes(G, 'node_type')  # Get the node types
+node_color = [node_colors[node_types[node]] for node in G.nodes]
+nx.draw_networkx_nodes(G, pos, node_color=node_color)
+nx.draw_networkx_edges(G, pos)
+nx.draw_networkx_labels(G, pos, labels)
+
+# Display the graph
+import matplotlib.pyplot as plt
+plt.show()
