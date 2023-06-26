@@ -1,71 +1,75 @@
-import networkx as nx
-import win32com.client
+import asyncio
+import csv
+from pyppeteer import launch
+from pyppeteer.network_manager import Request, Response
 
-# Initialize the Outlook application
-outlook = win32com.client.Dispatch("Outlook.Application")
+async def authenticate(page):
+    # Perform authentication logic here
+    # For example, enter username and password and submit the form
+    await page.type('#username', 'your_username')
+    await page.type('#password', 'your_password')
+    await page.click('#login-button')
+    await page.waitForNavigation()
 
-# Replace with the email address of the manager
-manager_email = 'manager@example.com'
-
-# Create an empty NetworkX graph
-G = nx.Graph()
-
-def add_employee_nodes(manager_email):
-    # Get the recipient object for the manager's email address
-    recipient = outlook.Session.CreateRecipient(manager_email)
-
-    # Resolve the recipient
-    recipient.Resolve()
-
-    # Check if the recipient has been resolved
-    if recipient.Resolved:
-        # Get the manager's Exchange user object
-        manager_user = recipient.AddressEntry.GetExchangeUser()
-
-        # Add the manager as a node in the graph with a different color
-        G.add_node(manager_email, label=manager_user.Name, node_type='manager')
-
-        # Get the manager's direct reports (employees)
-        direct_reports = manager_user.GetDirectReports()
-
-        # Check if the manager has direct reports
-        if direct_reports:
-            # Loop through the direct reports and add nodes and edges
-            for report in direct_reports:
-                report_email = report.PrimarySmtpAddress
-                report_user = report.GetExchangeUser()
-
-                # Add the employee as a node in the graph
-                G.add_node(report_email, label=report_user.Name, node_type='employee')
-
-                # Add an edge between the manager and the employee
-                G.add_edge(manager_email, report_email)
-
-                # Recursively add nodes for the employee's direct reports
-                add_employee_nodes(report_email)
+async def capture_screenshots(csv_path, base_url):
+    # Launch the browser
+    browser = await launch()
+    
+    # Create a new page
+    page = await browser.newPage()
+    
+    # Configure network interception
+    await page.setRequestInterception(True)
+    
+    async def intercept_requests(request: Request):
+        # Block certain requests (e.g., ads, analytics) if needed
+        if 'google-analytics.com' in request.url:
+            await request.abort()
         else:
-            # If the manager has no direct reports, display them differently
-            G.nodes[manager_email]['node_type'] = 'manager_no_reports'
+            await request.continue_()
+    
+    async def intercept_responses(response: Response):
+        # Log or process responses if needed
+        print(f'Response URL: {response.url}')
+    
+    page.on('request', intercept_requests)
+    page.on('response', intercept_responses)
+    
+    # Read the CSV file
+    with open(csv_path, 'r') as csvfile:
+        reader = csv.reader(csvfile)
+        next(reader)  # Skip header row
+        
+        # Process each row in the CSV
+        for row in reader:
+            page_name = row[0]
+            url = row[1]
+            
+            # Construct the full URL using the base URL and column 2
+            full_url = base_url + url
+            
+            # Navigate to the URL
+            await page.goto(full_url)
+            
+            # Perform authentication on the base URL
+            if url == row[1]:
+                await authenticate(page)
+            
+            # Wait for page load and network events
+            await page.waitForNavigation()
+            await page.waitForNetworkIdle()
+            
+            # Take a screenshot of the page
+            screenshot_path = f'{page_name}.png'
+            await page.screenshot({'path': screenshot_path})
+            
+            print(f'Screenshot captured: {screenshot_path}')
+    
+    # Close the browser
+    await browser.close()
 
-# Start adding nodes and edges from the manager
-add_employee_nodes(manager_email)
-
-# Define node colors based on node type
-node_colors = {
-    'manager': 'blue',
-    'employee': 'green',
-    'manager_no_reports': 'red',
-}
-
-# Draw the graph with different node colors based on node type
-pos = nx.spring_layout(G)  # Define the layout for the graph
-labels = nx.get_node_attributes(G, 'label')  # Get the labels for the nodes
-node_types = nx.get_node_attributes(G, 'node_type')  # Get the node types
-node_color = [node_colors[node_types[node]] for node in G.nodes]
-nx.draw_networkx_nodes(G, pos, node_color=node_color)
-nx.draw_networkx_edges(G, pos)
-nx.draw_networkx_labels(G, pos, labels)
-
-# Display the graph
-import matplotlib.pyplot as plt
-plt.show()
+# Run the main function
+if __name__ == '__main__':
+    csv_path = 'path/to/csv_file.csv'
+    base_url = 'https://example.com/'
+    asyncio.run(capture_screenshots(csv_path, base_url))
