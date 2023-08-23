@@ -1,75 +1,64 @@
-import asyncio
-import csv
-from pyppeteer import launch
-from pyppeteer.network_manager import Request, Response
+Day 1:
 
-async def authenticate(page):
-    # Perform authentication logic here
-    # For example, enter username and password and submit the form
-    await page.type('#username', 'your_username')
-    await page.type('#password', 'your_password')
-    await page.click('#login-button')
-    await page.waitForNavigation()
+Part 0: Introduction and Environment Setup (15 minutes)
 
-async def capture_screenshots(csv_path, base_url):
-    # Launch the browser
-    browser = await launch()
-    
-    # Create a new page
-    page = await browser.newPage()
-    
-    # Configure network interception
-    await page.setRequestInterception(True)
-    
-    async def intercept_requests(request: Request):
-        # Block certain requests (e.g., ads, analytics) if needed
-        if 'google-analytics.com' in request.url:
-            await request.abort()
-        else:
-            await request.continue_()
-    
-    async def intercept_responses(response: Response):
-        # Log or process responses if needed
-        print(f'Response URL: {response.url}')
-    
-    page.on('request', intercept_requests)
-    page.on('response', intercept_responses)
-    
-    # Read the CSV file
-    with open(csv_path, 'r') as csvfile:
-        reader = csv.reader(csvfile)
-        next(reader)  # Skip header row
-        
-        # Process each row in the CSV
-        for row in reader:
-            page_name = row[0]
-            url = row[1]
-            
-            # Construct the full URL using the base URL and column 2
-            full_url = base_url + url
-            
-            # Navigate to the URL
-            await page.goto(full_url)
-            
-            # Perform authentication on the base URL
-            if url == row[1]:
-                await authenticate(page)
-            
-            # Wait for page load and network events
-            await page.waitForNavigation()
-            await page.waitForNetworkIdle()
-            
-            # Take a screenshot of the page
-            screenshot_path = f'{page_name}.png'
-            await page.screenshot({'path': screenshot_path})
-            
-            print(f'Screenshot captured: {screenshot_path}')
-    
-    # Close the browser
-    await browser.close()
+Brief introduction to the session's objectives.
+Verify Python installation and install necessary packages (pytest, selenium).
+Download WebDriver executables.
+Install PyCharm (if not already done).
+Part 1: Python Basics (15 minutes)
 
-# Run the main function
-if __name__ == '__main__':
-    csv_path = 'path/to/csv_file.csv'
-    base_url = 'https://example.com/'
-    asyncio.run(capture_screenshots(csv_path, base_url))
+Briefly introduce Python programming.
+Variables, data types, and basic operations.
+Control structures (if, while, for).
+Functions and exception handling.
+Part 2: Introduction to Pytest (10 minutes)
+
+Introduce Pytest and its benefits.
+Write and run basic Pytest tests.
+Explain test discovery and result output.
+Part 3: Test Fixtures and Assertions (15 minutes)
+
+Define and use Pytest fixtures for test setup and teardown.
+Use assertions to validate expected outcomes.
+Show how Pytest handles test dependencies.
+Part 4: Selenium Setup and Basic Interaction (15 minutes)
+
+Set up Selenium WebDriver.
+Open a browser and navigate to a webpage.
+Interact with web elements (click, input).
+Day 2:
+
+Recap of Day 1 (5 minutes)
+
+Briefly summarize Day 1's content.
+Part 5: Writing Effective Tests (15 minutes)
+
+Emphasize the importance of meaningful test cases.
+Use descriptive function names and docstrings.
+Create assertions with clear failure messages.
+Part 6: Advanced Selenium Interactions (15 minutes)
+
+Locate elements using different strategies (ID, class, XPath).
+Perform keyboard and mouse interactions.
+Handle alerts and pop-up windows.
+Part 7: Parametrized Testing (10 minutes)
+
+Write parametrized tests to cover different scenarios.
+Showcase the @pytest.mark.parametrize decorator.
+Part 8: Test Organization and Grouping (10 minutes)
+
+Organize tests into test classes or modules.
+Use markers and groups to run specific tests.
+Part 9: Best Practices and Tips (10 minutes)
+
+Share best practices for writing maintainable tests.
+Discuss strategies for reducing test execution time.
+Highlight common pitfalls and how to avoid them.
+Part 10: Q&A and Open Discussion (15 minutes)
+
+Open the floor for participants to ask questions.
+Discuss challenges, experiences, and strategies.
+Conclusion (5 minutes)
+
+Summarize key takeaways from the session.
