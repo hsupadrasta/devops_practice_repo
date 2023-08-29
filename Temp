@@ -1,38 +1,57 @@
-import sqlite3
-import concurrent.futures
-import time
+import tkinter as tk
+from tkinter import filedialog
 
-# Create a connection to the database
-conn = sqlite3.connect("example.db")
-cursor = conn.cursor()
+def submit():
+    file_path = file_path_var.get()
+    username = username_var.get()
+    password = password_var.get()
+    base_url = base_url_var.get()
 
-# Function to simulate a database query
-def query_database(query):
-    start_time = time.time()
-    cursor.execute(query)
-    result = cursor.fetchall()
-    end_time = time.time()
-    execution_time = end_time - start_time
-    return result, execution_time
+    print("File Path:", file_path)
+    print("Username:", username)
+    print("Password:", password)
+    print("Base URL:", base_url)
 
-# Function to be executed concurrently
-def concurrent_task(user_id):
-    query = f"SELECT * FROM users WHERE id = {user_id}"
-    result, execution_time = query_database(query)
-    return user_id, result, execution_time
+app = tk.Tk()
+app.title("Input Form")
 
-# List of user IDs to query
-user_ids_to_query = [1, 2, 3, 4, 5]
+# File Path
+file_path_label = tk.Label(app, text="File Path:")
+file_path_label.pack()
 
-# Create a ThreadPoolExecutor
-with concurrent.futures.ThreadPoolExecutor(max_workers=len(user_ids_to_query)) as executor:
-    # Submit tasks
-    futures = [executor.submit(concurrent_task, user_id) for user_id in user_ids_to_query]
-    
-    # Retrieve and print results
-    for future in concurrent.futures.as_completed(futures):
-        user_id, result, execution_time = future.result()
-        print(f"Query for User ID {user_id} took {execution_time:.4f} seconds. Result: {result}")
+file_path_var = tk.StringVar()
+file_path_entry = tk.Entry(app, textvariable=file_path_var)
+file_path_entry.pack()
 
-# Close the connection after all tasks are done
-conn.close()
+file_path_button = tk.Button(app, text="Browse", command=lambda: file_path_var.set(filedialog.askopenfilename()))
+file_path_button.pack()
+
+# Username
+username_label = tk.Label(app, text="Username:")
+username_label.pack()
+
+username_var = tk.StringVar()
+username_entry = tk.Entry(app, textvariable=username_var)
+username_entry.pack()
+
+# Password
+password_label = tk.Label(app, text="Password:")
+password_label.pack()
+
+password_var = tk.StringVar()
+password_entry = tk.Entry(app, textvariable=password_var, show="*")
+password_entry.pack()
+
+# Base URL
+base_url_label = tk.Label(app, text="Base URL:")
+base_url_label.pack()
+
+base_url_var = tk.StringVar()
+base_url_entry = tk.Entry(app, textvariable=base_url_var)
+base_url_entry.pack()
+
+# Submit Button
+submit_button = tk.Button(app, text="Submit", command=submit)
+submit_button.pack()
+
+app.mainloop()
