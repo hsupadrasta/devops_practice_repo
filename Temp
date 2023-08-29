@@ -1,47 +1,17 @@
-Thank you for providing the details of your tool's usage. Based on the information you've provided, here's a concise guide for users to use your performance testing tool:
+import sqlite3
 
----
+# Create a connection to the database
+conn = sqlite3.connect("example.db")
+cursor = conn.cursor()
 
-# Performance Testing Tool - User Guide
+# Insert 100 records into the 'users' table
+for i in range(1, 101):
+    username = f"user{i}"
+    email = f"user{i}@example.com"
+    cursor.execute("INSERT INTO users (username, email) VALUES (?, ?)", (username, email))
 
-## Introduction
-Welcome to the Performance Testing Tool user guide. This tool allows you to perform performance tests on API endpoints using pre-recorded request headers. Follow the steps below to get started.
+# Commit changes and close the connection
+conn.commit()
+conn.close()
 
-## Prerequisites
-Before you begin, make sure you have the following:
-- The Performance Testing Tool executable (`.exe`) file.
-- The `test_template.csv` file containing test parameters.
-
-## Installation
-1. Download the Performance Testing Tool executable from [link].
-2. Download the `test_template.csv` file.
-
-## Setting Up Test Parameters
-1. Place the `test_template.csv` file in the `C:\Users\userid\` directory.
-2. Open the `test_template.csv` file and provide the following details for each test case:
-   - `endpoint`: API endpoint to test.
-   - `method`: HTTP request method (GET/POST/PUT/DELETE).
-   - `body`: Request body for POST/PUT requests (leave empty for GET/DELETE).
-   - `threads`: Number of concurrent requests to execute.
-   - `run`: Set to `1` to run the test case, or `0` to skip it.
-
-## Running the Performance Test
-1. Double-click the `PerformanceTestingTool.exe` file.
-2. The tool will prompt you to copy request headers from your browser's network tab. To do this:
-   a. Open your web application and navigate to the API page.
-   b. Open the browser's developer tools and go to the Network tab.
-   c. Run the application to capture network requests.
-   d. Right-click on the network event corresponding to the API request and copy the request headers.
-3. Return to the command prompt and paste the copied headers, then press Enter.
-
-## Viewing Results
-- Once the tool completes the tests, the results will be stored in the same location as the executable with the name `test_results.csv`.
-
-## Conclusion
-You've successfully used the Performance Testing Tool to perform performance tests on API endpoints. Customize the `test_template.csv` file and follow the steps provided to analyze the results.
-
-For further assistance, contact [your contact information].
-
----
-
-Feel free to replace placeholders with actual information, such as download links, file names, and contact details. This guide provides a straightforward approach for users to conduct performance tests using your tool based on the steps you've outlined.
+print("Inserted 100 records into the 'users' table.")
