@@ -1,57 +1,66 @@
 import tkinter as tk
 from tkinter import filedialog
+from tkinter import ttk
+
+def show_in_progress_window():
+    global in_progress_window
+
+    # Create a new window
+    in_progress_window = tk.Toplevel(app)
+    in_progress_window.title("In Progress")
+
+    # Add a spinner
+    spinner = ttk.Progressbar(in_progress_window, mode="indeterminate")
+    spinner.pack(padx=20, pady=20)
+    spinner.start()
+
+def show_completed_window():
+    global in_progress_window
+
+    # Update spinner window with "Completed" message and "OK" button
+    spinner = in_progress_window.winfo_children()[0]
+    spinner.stop()
+    spinner.destroy()
+
+    completed_label = tk.Label(in_progress_window, text="Completed", font=("Helvetica", 14, "bold"))
+    completed_label.pack(padx=20, pady=10)
+
+    ok_button = tk.Button(in_progress_window, text="OK", command=in_progress_window.destroy)
+    ok_button.pack(padx=20, pady=10)
 
 def submit():
+    global file_path, username, password, base_url
+
+    # Show "In Progress" window
+    show_in_progress_window()
+
     file_path = file_path_var.get()
     username = username_var.get()
     password = password_var.get()
     base_url = base_url_var.get()
 
-    print("File Path:", file_path)
-    print("Username:", username)
-    print("Password:", password)
-    print("Base URL:", base_url)
+    # Close the application
+    app.quit()
 
 app = tk.Tk()
 app.title("Input Form")
 
-# File Path
-file_path_label = tk.Label(app, text="File Path:")
-file_path_label.pack()
+# Set the app to open in fullscreen
+app.attributes("-fullscreen", True)
 
-file_path_var = tk.StringVar()
-file_path_entry = tk.Entry(app, textvariable=file_path_var)
-file_path_entry.pack()
-
-file_path_button = tk.Button(app, text="Browse", command=lambda: file_path_var.set(filedialog.askopenfilename()))
-file_path_button.pack()
-
-# Username
-username_label = tk.Label(app, text="Username:")
-username_label.pack()
-
-username_var = tk.StringVar()
-username_entry = tk.Entry(app, textvariable=username_var)
-username_entry.pack()
-
-# Password
-password_label = tk.Label(app, text="Password:")
-password_label.pack()
-
-password_var = tk.StringVar()
-password_entry = tk.Entry(app, textvariable=password_var, show="*")
-password_entry.pack()
-
-# Base URL
-base_url_label = tk.Label(app, text="Base URL:")
-base_url_label.pack()
-
-base_url_var = tk.StringVar()
-base_url_entry = tk.Entry(app, textvariable=base_url_var)
-base_url_entry.pack()
+# ... (UI setup)
 
 # Submit Button
 submit_button = tk.Button(app, text="Submit", command=submit)
 submit_button.pack()
 
 app.mainloop()
+
+# Now you can use these values in your main program
+print("File Path:", file_path)
+print("Username:", username)
+print("Password:", password)
+print("Base URL:", base_url)
+
+# Show "Completed" window
+show_completed_window()
