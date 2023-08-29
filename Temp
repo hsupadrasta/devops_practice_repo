@@ -3,6 +3,30 @@ import sqlite3
 # Create a connection to the database
 conn = sqlite3.connect("example.db")
 cursor = conn.cursor()
+import sqlite3
+
+# Create a connection to the database (this will also create the database file)
+
+
+# Create a 'users' table
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY,
+        username TEXT,
+        email TEXT
+    )
+''')
+
+# Create an 'orders' table
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS orders (
+        id INTEGER PRIMARY KEY,
+        user_id INTEGER,
+        total_amount REAL
+    )
+''')
+
+# Commit changes and close the connection
 
 # Insert 100 records into the 'users' table
 for i in range(1, 101):
