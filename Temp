@@ -1,41 +1,38 @@
 import sqlite3
+import concurrent.futures
+import time
 
 # Create a connection to the database
 conn = sqlite3.connect("example.db")
 cursor = conn.cursor()
-import sqlite3
 
-# Create a connection to the database (this will also create the database file)
+# Function to simulate a database query
+def query_database(query):
+    start_time = time.time()
+    cursor.execute(query)
+    result = cursor.fetchall()
+    end_time = time.time()
+    execution_time = end_time - start_time
+    return result, execution_time
 
+# Function to be executed concurrently
+def concurrent_task(user_id):
+    query = f"SELECT * FROM users WHERE id = {user_id}"
+    result, execution_time = query_database(query)
+    return user_id, result, execution_time
 
-# Create a 'users' table
-cursor.execute('''
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY,
-        username TEXT,
-        email TEXT
-    )
-''')
+# List of user IDs to query
+user_ids_to_query = [1, 2, 3, 4, 5]
 
-# Create an 'orders' table
-cursor.execute('''
-    CREATE TABLE IF NOT EXISTS orders (
-        id INTEGER PRIMARY KEY,
-        user_id INTEGER,
-        total_amount REAL
-    )
-''')
+# Create a ThreadPoolExecutor
+with concurrent.futures.ThreadPoolExecutor(max_workers=len(user_ids_to_query)) as executor:
+    # Submit tasks
+    futures = [executor.submit(concurrent_task, user_id) for user_id in user_ids_to_query]
+    
+    # Retrieve and print results
+    for future in concurrent.futures.as_completed(futures):
+        user_id, result, execution_time = future.result()
+        print(f"Query for User ID {user_id} took {execution_time:.4f} seconds. Result: {result}")
 
-# Commit changes and close the connection
-
-# Insert 100 records into the 'users' table
-for i in range(1, 101):
-    username = f"user{i}"
-    email = f"user{i}@example.com"
-    cursor.execute("INSERT INTO users (username, email) VALUES (?, ?)", (username, email))
-
-# Commit changes and close the connection
-conn.commit()
+# Close the connection after all tasks are done
 conn.close()
-
-print("Inserted 100 records into the 'users' table.")
