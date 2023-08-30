@@ -1,10 +1,7 @@
 import os
-import cv2
-import numpy as np
-from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import filedialog
-from skimage.metrics import structural_similarity as ssim
+from PIL import Image, ImageTk, ImageChops
 
 class ImageComparatorApp:
     def __init__(self, root):
@@ -48,16 +45,16 @@ class ImageComparatorApp:
 
         image_set = []
         for file1, file2 in zip(sorted(os.listdir(self.folder1)), sorted(os.listdir(self.folder2))):
-            image1 = cv2.imread(os.path.join(self.folder1, file1))
-            image2 = cv2.imread(os.path.join(self.folder2, file2))
+            image1 = Image.open(os.path.join(self.folder1, file1))
+            image2 = Image.open(os.path.join(self.folder2, file2))
 
-            # Perform image comparison using OpenCV
-            difference_image = cv2.absdiff(image1, image2)
-            gray_diff_image = cv2.cvtColor(difference_image, cv2.COLOR_BGR2GRAY)
+            # Perform image comparison using imagechops
+            difference_image = ImageChops.difference(image1, image2)
+            gray_diff_image = difference_image.convert("L")
 
             # Calculate Structural Similarity Index and Mean Squared Error
-            ssim_score = ssim(image1, image2, multichannel=True)
-            mse = np.mean((image1 - image2) ** 2)
+            ssim_score = 1.0 - float(difference_image.getbbox()[2] * difference_image.getbbox()[3]) / (image1.size[0] * image1.size[1])
+            mse = ImageChops.mean(difference_image).rms
 
             image_set.append((image1, image2, gray_diff_image, ssim_score, mse))
 
@@ -74,9 +71,9 @@ class ImageComparatorApp:
         image1, image2, diff_image, ssim_score, mse = self.image_sets[self.current_image_index]
 
         # Convert images to Tkinter PhotoImage format
-        img1_tk = ImageTk.PhotoImage(image=Image.fromarray(cv2.cvtColor(image1, cv2.COLOR_BGR2RGB)))
-        img2_tk = ImageTk.PhotoImage(image=Image.fromarray(cv2.cvtColor(image2, cv2.COLOR_BGR2RGB)))
-        diff_img_tk = ImageTk.PhotoImage(image=Image.fromarray(diff_image))
+        img1_tk = ImageTk.PhotoImage(image=image1)
+        img2_tk = ImageTk.PhotoImage(image=image2)
+        diff_img_tk = ImageTk.PhotoImage(image=diff_image)
 
         # Update labels with images and similarity metrics
         self.label1.configure(image=img1_tk)
