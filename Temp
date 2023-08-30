@@ -1,66 +1,103 @@
+import os
+import cv2
+import numpy as np
+from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import filedialog
-from tkinter import ttk
+from skimage.metrics import structural_similarity as ssim
 
-def show_in_progress_window():
-    global in_progress_window
+class ImageComparatorApp:
+    def __init__(self, root):
+        self.root = root
+        self.folder1 = ""
+        self.folder2 = ""
+        self.current_image_index = 0
+        self.image_sets = []
 
-    # Create a new window
-    in_progress_window = tk.Toplevel(app)
-    in_progress_window.title("In Progress")
+        self.label1 = tk.Label(root)
+        self.label2 = tk.Label(root)
+        self.label_diff = tk.Label(root)
+        self.compare_button = tk.Button(root, text="Compare", command=self.compare_images)
+        self.next_button = tk.Button(root, text="Next", command=self.load_next_images)
 
-    # Add a spinner
-    spinner = ttk.Progressbar(in_progress_window, mode="indeterminate")
-    spinner.pack(padx=20, pady=20)
-    spinner.start()
+        self.folder1_var = tk.StringVar()
+        self.folder2_var = tk.StringVar()
 
-def show_completed_window():
-    global in_progress_window
+        self.initialize_ui()
 
-    # Update spinner window with "Completed" message and "OK" button
-    spinner = in_progress_window.winfo_children()[0]
-    spinner.stop()
-    spinner.destroy()
+    def initialize_ui(self):
+        self.root.title("Image Comparator")
 
-    completed_label = tk.Label(in_progress_window, text="Completed", font=("Helvetica", 14, "bold"))
-    completed_label.pack(padx=20, pady=10)
+        tk.Label(self.root, text="Folder 1:").pack()
+        tk.Entry(self.root, textvariable=self.folder1_var).pack()
+        tk.Button(self.root, text="Browse", command=lambda: self.browse_folder(self.folder1_var)).pack()
 
-    ok_button = tk.Button(in_progress_window, text="OK", command=in_progress_window.destroy)
-    ok_button.pack(padx=20, pady=10)
+        tk.Label(self.root, text="Folder 2:").pack()
+        tk.Entry(self.root, textvariable=self.folder2_var).pack()
+        tk.Button(self.root, text="Browse", command=lambda: self.browse_folder(self.folder2_var)).pack()
 
-def submit():
-    global file_path, username, password, base_url
+        self.compare_button.pack()
+        self.next_button.pack()
+        self.label1.pack()
+        self.label2.pack()
+        self.label_diff.pack()
 
-    # Show "In Progress" window
-    show_in_progress_window()
+    def compare_images(self):
+        if not self.folder1 or not self.folder2:
+            return
 
-    file_path = file_path_var.get()
-    username = username_var.get()
-    password = password_var.get()
-    base_url = base_url_var.get()
+        image_set = []
+        for file1, file2 in zip(sorted(os.listdir(self.folder1)), sorted(os.listdir(self.folder2))):
+            image1 = cv2.imread(os.path.join(self.folder1, file1))
+            image2 = cv2.imread(os.path.join(self.folder2, file2))
 
-    # Close the application
-    app.quit()
+            # Perform image comparison using OpenCV
+            difference_image = cv2.absdiff(image1, image2)
+            gray_diff_image = cv2.cvtColor(difference_image, cv2.COLOR_BGR2GRAY)
 
-app = tk.Tk()
-app.title("Input Form")
+            # Calculate Structural Similarity Index and Mean Squared Error
+            ssim_score = ssim(image1, image2, multichannel=True)
+            mse = np.mean((image1 - image2) ** 2)
 
-# Set the app to open in fullscreen
-app.attributes("-fullscreen", True)
+            image_set.append((image1, image2, gray_diff_image, ssim_score, mse))
 
-# ... (UI setup)
+        self.image_sets = image_set
+        self.current_image_index = 0
+        self.display_current_images()
 
-# Submit Button
-submit_button = tk.Button(app, text="Submit", command=submit)
-submit_button.pack()
+    def load_next_images(self):
+        if self.current_image_index < len(self.image_sets) - 1:
+            self.current_image_index += 1
+            self.display_current_images()
 
-app.mainloop()
+    def display_current_images(self):
+        image1, image2, diff_image, ssim_score, mse = self.image_sets[self.current_image_index]
 
-# Now you can use these values in your main program
-print("File Path:", file_path)
-print("Username:", username)
-print("Password:", password)
-print("Base URL:", base_url)
+        # Convert images to Tkinter PhotoImage format
+        img1_tk = ImageTk.PhotoImage(image=Image.fromarray(cv2.cvtColor(image1, cv2.COLOR_BGR2RGB)))
+        img2_tk = ImageTk.PhotoImage(image=Image.fromarray(cv2.cvtColor(image2, cv2.COLOR_BGR2RGB)))
+        diff_img_tk = ImageTk.PhotoImage(image=Image.fromarray(diff_image))
 
-# Show "Completed" window
-show_completed_window()
+        # Update labels with images and similarity metrics
+        self.label1.configure(image=img1_tk)
+        self.label2.configure(image=img2_tk)
+        self.label_diff.configure(image=diff_img_tk)
+        self.label_similarity = tk.Label(self.root, text=f"SSIM: {ssim_score:.2f}\nMSE: {mse:.2f}")
+        self.label_similarity.pack()
+
+        # Keep references to prevent images from being garbage collected
+        self.label1.img = img1_tk
+        self.label2.img = img2_tk
+        self.label_diff.img = diff_img_tk
+
+    def browse_folder(self, folder_var):
+        folder = filedialog.askdirectory()
+        folder_var.set(folder)
+
+    def run(self):
+        self.root.mainloop()
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = ImageComparatorApp(root)
+    app.run()
