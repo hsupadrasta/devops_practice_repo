@@ -2,94 +2,112 @@ import os
 import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageTk, ImageChops
+from skimage.metrics import structural_similarity as ssim
 
 class ImageComparatorApp:
     def __init__(self, root):
         self.root = root
-        self.folder1 = ""
-        self.folder2 = ""
-        self.current_image_index = 0
-        self.image_sets = []
+        self.input_folder1 = ""
+        self.input_folder2 = ""
+        self.diff_folder = ""
+        self.results = []
+        self.current_result_index = 0
 
-        self.label1 = tk.Label(root)
-        self.label2 = tk.Label(root)
-        self.label_diff = tk.Label(root)
+        self.label_status = tk.Label(root, text="")
         self.compare_button = tk.Button(root, text="Compare", command=self.compare_images)
-        self.next_button = tk.Button(root, text="Next", command=self.load_next_images)
-
-        self.folder1_var = tk.StringVar()
-        self.folder2_var = tk.StringVar()
+        self.view_results_button = tk.Button(root, text="View Results", command=self.view_results)
 
         self.initialize_ui()
 
     def initialize_ui(self):
         self.root.title("Image Comparator")
 
-        tk.Label(self.root, text="Folder 1:").pack()
-        tk.Entry(self.root, textvariable=self.folder1_var).pack()
-        tk.Button(self.root, text="Browse", command=lambda: self.browse_folder(self.folder1_var)).pack()
+        tk.Label(self.root, text="Input Folder 1:").pack()
+        tk.Entry(self.root, textvariable=self.input_folder1).pack()
+        tk.Button(self.root, text="Browse", command=lambda: self.browse_folder("input_folder1")).pack()
 
-        tk.Label(self.root, text="Folder 2:").pack()
-        tk.Entry(self.root, textvariable=self.folder2_var).pack()
-        tk.Button(self.root, text="Browse", command=lambda: self.browse_folder(self.folder2_var)).pack()
+        tk.Label(self.root, text="Input Folder 2:").pack()
+        tk.Entry(self.root, textvariable=self.input_folder2).pack()
+        tk.Button(self.root, text="Browse", command=lambda: self.browse_folder("input_folder2")).pack()
+
+        tk.Label(self.root, text="Diff Folder:").pack()
+        tk.Entry(self.root, textvariable=self.diff_folder).pack()
+        tk.Button(self.root, text="Browse", command=lambda: self.browse_folder("diff_folder")).pack()
 
         self.compare_button.pack()
-        self.next_button.pack()
-        self.label1.pack()
-        self.label2.pack()
-        self.label_diff.pack()
+        self.view_results_button.pack()
+        self.label_status.pack()
 
     def compare_images(self):
-        if not self.folder1 or not self.folder2:
+        if not self.input_folder1 or not self.input_folder2 or not self.diff_folder:
             return
 
-        image_set = []
-        for file1, file2 in zip(sorted(os.listdir(self.folder1)), sorted(os.listdir(self.folder2))):
-            image1 = Image.open(os.path.join(self.folder1, file1))
-            image2 = Image.open(os.path.join(self.folder2, file2))
+        self.results = []
+        input_files1 = sorted(os.listdir(self.input_folder1))
+        input_files2 = sorted(os.listdir(self.input_folder2))
+        diff_files = sorted(os.listdir(self.diff_folder))
 
-            # Perform image comparison using imagechops
-            difference_image = ImageChops.difference(image1, image2)
-            gray_diff_image = difference_image.convert("L")
+        for file1, file2, diff_file in zip(input_files1, input_files2, diff_files):
+            image1 = Image.open(os.path.join(self.input_folder1, file1))
+            image2 = Image.open(os.path.join(self.input_folder2, file2))
+            diff_image = Image.open(os.path.join(self.diff_folder, diff_file))
 
             # Calculate Structural Similarity Index and Mean Squared Error
-            ssim_score = 1.0 - float(difference_image.getbbox()[2] * difference_image.getbbox()[3]) / (image1.size[0] * image1.size[1])
-            mse = ImageChops.mean(difference_image).rms
+            ssim_score = ssim(image1, image2, multichannel=True)
+            mse = self.calculate_mse(image1, image2)
 
-            image_set.append((image1, image2, gray_diff_image, ssim_score, mse))
+            self.results.append((image1, image2, diff_image, ssim_score, mse))
 
-        self.image_sets = image_set
-        self.current_image_index = 0
-        self.display_current_images()
+        # Display compared message
+        self.display_compared_message()
 
-    def load_next_images(self):
-        if self.current_image_index < len(self.image_sets) - 1:
-            self.current_image_index += 1
-            self.display_current_images()
+    def calculate_mse(self, image1, image2):
+        # Calculate Mean Squared Error between two images
+        mse = sum((px1 - px2) ** 2 for px1, px2 in zip(image1.getdata(), image2.getdata())) / float(image1.size[0] * image1.size[1])
+        return mse
 
-    def display_current_images(self):
-        image1, image2, diff_image, ssim_score, mse = self.image_sets[self.current_image_index]
+    def display_compared_message(self):
+        self.label_status.config(text="Comparison Complete")
 
-        # Convert images to Tkinter PhotoImage format
+    def view_results(self):
+        if not self.results:
+            return
+
+        results_window = tk.Toplevel(self.root)
+        self.current_result_index = 0
+        self.display_result(results_window)
+
+    def display_result(self, results_window):
+        if self.current_result_index >= len(self.results):
+            tk.Label(results_window, text="All results compared").pack()
+            return
+
+        image1, image2, diff_image, ssim_score, mse = self.results[self.current_result_index]
+
         img1_tk = ImageTk.PhotoImage(image=image1)
         img2_tk = ImageTk.PhotoImage(image=image2)
         diff_img_tk = ImageTk.PhotoImage(image=diff_image)
 
-        # Update labels with images and similarity metrics
-        self.label1.configure(image=img1_tk)
-        self.label2.configure(image=img2_tk)
-        self.label_diff.configure(image=diff_img_tk)
-        self.label_similarity = tk.Label(self.root, text=f"SSIM: {ssim_score:.2f}\nMSE: {mse:.2f}")
-        self.label_similarity.pack()
+        tk.Label(results_window, image=img1_tk).pack()
+        tk.Label(results_window, image=img2_tk).pack()
+        tk.Label(results_window, image=diff_img_tk).pack()
+        tk.Label(results_window, text=f"SSIM: {ssim_score:.2f}\nMSE: {mse:.2f}").pack()
 
-        # Keep references to prevent images from being garbage collected
-        self.label1.img = img1_tk
-        self.label2.img = img2_tk
-        self.label_diff.img = diff_img_tk
+        tk.Button(results_window, text="Next", command=lambda: self.next_result(results_window)).pack()
+
+        self.current_result_index += 1
+
+    def next_result(self, results_window):
+        self.display_result(results_window)
 
     def browse_folder(self, folder_var):
         folder = filedialog.askdirectory()
-        folder_var.set(folder)
+        if folder_var == "input_folder1":
+            self.input_folder1 = folder
+        elif folder_var == "input_folder2":
+            self.input_folder2 = folder
+        elif folder_var == "diff_folder":
+            self.diff_folder = folder
 
     def run(self):
         self.root.mainloop()
