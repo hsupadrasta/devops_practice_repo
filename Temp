@@ -12,6 +12,7 @@ class ImageComparatorApp:
         self.diff_folder = ""
         self.results = []
         self.current_result_index = 0
+        self.results_window = None
 
         self.label_status = tk.Label(root, text="")
         self.compare_button = tk.Button(root, text="Compare", command=self.compare_images)
@@ -23,22 +24,29 @@ class ImageComparatorApp:
         self.root.title("Image Comparator")
 
         tk.Label(self.root, text="Input Folder 1:").pack()
-        tk.Entry(self.root, textvariable=self.input_folder1).pack()
-        tk.Button(self.root, text="Browse", command=lambda: self.browse_folder("input_folder1")).pack()
+        self.input_folder1_var = tk.StringVar()
+        tk.Entry(self.root, textvariable=self.input_folder1_var).pack()
+        tk.Button(self.root, text="Browse", command=lambda: self.browse_folder(self.input_folder1_var)).pack()
 
         tk.Label(self.root, text="Input Folder 2:").pack()
-        tk.Entry(self.root, textvariable=self.input_folder2).pack()
-        tk.Button(self.root, text="Browse", command=lambda: self.browse_folder("input_folder2")).pack()
+        self.input_folder2_var = tk.StringVar()
+        tk.Entry(self.root, textvariable=self.input_folder2_var).pack()
+        tk.Button(self.root, text="Browse", command=lambda: self.browse_folder(self.input_folder2_var)).pack()
 
         tk.Label(self.root, text="Diff Folder:").pack()
-        tk.Entry(self.root, textvariable=self.diff_folder).pack()
-        tk.Button(self.root, text="Browse", command=lambda: self.browse_folder("diff_folder")).pack()
+        self.diff_folder_var = tk.StringVar()
+        tk.Entry(self.root, textvariable=self.diff_folder_var).pack()
+        tk.Button(self.root, text="Browse", command=lambda: self.browse_folder(self.diff_folder_var)).pack()
 
         self.compare_button.pack()
         self.view_results_button.pack()
         self.label_status.pack()
 
     def compare_images(self):
+        self.input_folder1 = self.input_folder1_var.get()
+        self.input_folder2 = self.input_folder2_var.get()
+        self.diff_folder = self.diff_folder_var.get()
+
         if not self.input_folder1 or not self.input_folder2 or not self.diff_folder:
             return
 
@@ -46,6 +54,11 @@ class ImageComparatorApp:
         input_files1 = sorted(os.listdir(self.input_folder1))
         input_files2 = sorted(os.listdir(self.input_folder2))
         diff_files = sorted(os.listdir(self.diff_folder))
+
+        # Create a results folder to store difference images
+        results_folder = "results"
+        if not os.path.exists(results_folder):
+            os.makedirs(results_folder)
 
         for file1, file2, diff_file in zip(input_files1, input_files2, diff_files):
             image1 = Image.open(os.path.join(self.input_folder1, file1))
@@ -57,6 +70,9 @@ class ImageComparatorApp:
             mse = self.calculate_mse(image1, image2)
 
             self.results.append((image1, image2, diff_image, ssim_score, mse))
+
+            # Save the difference image to the results folder
+            diff_image.save(os.path.join(results_folder, diff_file))
 
         # Display compared message
         self.display_compared_message()
@@ -73,13 +89,16 @@ class ImageComparatorApp:
         if not self.results:
             return
 
-        results_window = tk.Toplevel(self.root)
+        self.results_window = tk.Toplevel(self.root)
         self.current_result_index = 0
-        self.display_result(results_window)
+        self.display_result()
 
-    def display_result(self, results_window):
+    def display_result(self):
         if self.current_result_index >= len(self.results):
-            tk.Label(results_window, text="All results compared").pack()
+            tk.Label(self.results_window, text="All results compared").pack()
+            return
+
+        if self.results_window is None:
             return
 
         image1, image2, diff_image, ssim_score, mse = self.results[self.current_result_index]
@@ -88,26 +107,20 @@ class ImageComparatorApp:
         img2_tk = ImageTk.PhotoImage(image=image2)
         diff_img_tk = ImageTk.PhotoImage(image=diff_image)
 
-        tk.Label(results_window, image=img1_tk).pack()
-        tk.Label(results_window, image=img2_tk).pack()
-        tk.Label(results_window, image=diff_img_tk).pack()
-        tk.Label(results_window, text=f"SSIM: {ssim_score:.2f}\nMSE: {mse:.2f}").pack()
+        tk.Label(self.results_window, image=img1_tk).pack()
+        tk.Label(self.results_window, image=img2_tk).pack()
+        tk.Label(self.results_window, image=diff_img_tk).pack()
+        tk.Label(self.results_window, text=f"SSIM: {ssim_score:.2f}\nMSE: {mse:.2f}").pack()
 
-        tk.Button(results_window, text="Next", command=lambda: self.next_result(results_window)).pack()
+        tk.Button(self.results_window, text="Next", command=self.next_result).pack()
 
+    def next_result(self):
         self.current_result_index += 1
-
-    def next_result(self, results_window):
-        self.display_result(results_window)
+        self.display_result()
 
     def browse_folder(self, folder_var):
         folder = filedialog.askdirectory()
-        if folder_var == "input_folder1":
-            self.input_folder1 = folder
-        elif folder_var == "input_folder2":
-            self.input_folder2 = folder
-        elif folder_var == "diff_folder":
-            self.diff_folder = folder
+        folder_var.set(folder)
 
     def run(self):
         self.root.mainloop()
