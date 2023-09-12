@@ -1,20 +1,44 @@
+import matplotlib.pyplot as plt
 import numpy as np
-from scipy import stats
+from sklearn.svm import OneClassSVM
 
-# Baseline data: These are the 'normal' test scores from previous batches of students.
-baseline_scores = np.array([70, 75, 80, 77, 89])
+# Function to display images
+def display_image(image, title):
+    plt.imshow(image, cmap='gray')
+    plt.title(title)
+    plt.axis('off')
+    plt.show()
 
-# New data: These are the test scores of the current batch of students.
-new_scores = np.array([80, 85, 90, 100, 20])
+# Generate synthetic 'normal' images (100 images of 5x5 pixels)
+normal_images = np.random.normal(loc=0.5, scale=0.1, size=(10000, 5, 5))
 
-# Calculate the mean and standard deviation of the baseline data.
-mean_baseline = np.mean(baseline_scores)
-std_dev_baseline = np.std(baseline_scores)
+# Generate synthetic 'anomalous' images (5 images of 5x5 pixels)
+anomalous_images = np.random.normal(loc=0.5, scale=0.1, size=(5, 5, 5))
 
-# Calculate Z-Scores for the new data based on the baseline
-z_scores = (new_scores - mean_baseline) / std_dev_baseline
+# Explicitly add a dark stripe along the diagonal
+for img in anomalous_images:
+    np.fill_diagonal(img, 0)
 
-# Find anomalies: Data points that have a Z-Score greater than 2 or less than -2
-anomalies_zscore = new_scores[np.abs(z_scores) > 2]
+# Combine into one dataset
+all_images = np.concatenate([normal_images, anomalous_images], axis=0)
 
-print("Anomalous data points:", anomalies_zscore)
+# Reshape images for One-Class SVM
+X = all_images.reshape((all_images.shape[0], -1))
+
+
+# Train One-Class SVM
+clf = OneClassSVM(gamma=0.01, nu=0.0005).fit(X[:10000])  # Training only on 'normal' images
+
+# Make predictions
+pred = clf.predict(X)
+
+# Find anomalous images
+anomalous_indices = np.where(pred == -1)[0]
+
+# Display the first 3 'normal' images
+for i in range(3):
+    display_image(normal_images[i], f'Normal Image {i+1}')
+
+# Display an identified 'anomalous' image
+if len(anomalous_indices) > 0:
+    display_image(all_images[anomalous_indices[-1]], 'Identified Anomalous Image')
