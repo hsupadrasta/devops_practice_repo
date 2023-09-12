@@ -1,6 +1,6 @@
+from sklearn.ensemble import IsolationForest
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.svm import OneClassSVM
 
 # Function to display images
 def display_image(image, title):
@@ -9,7 +9,7 @@ def display_image(image, title):
     plt.axis('off')
     plt.show()
 
-# Generate synthetic 'normal' images (100 images of 5x5 pixels)
+# Generate synthetic 'normal' images (10000 images of 5x5 pixels)
 normal_images = np.random.normal(loc=0.5, scale=0.1, size=(10000, 5, 5))
 
 # Generate synthetic 'anomalous' images (5 images of 5x5 pixels)
@@ -22,12 +22,11 @@ for img in anomalous_images:
 # Combine into one dataset
 all_images = np.concatenate([normal_images, anomalous_images], axis=0)
 
-# Reshape images for One-Class SVM
+# Reshape images for Isolation Forest
 X = all_images.reshape((all_images.shape[0], -1))
 
-
-# Train One-Class SVM
-clf = OneClassSVM(gamma=0.01, nu=0.0005).fit(X[:10000])  # Training only on 'normal' images
+# Train Isolation Forest
+clf = IsolationForest(contamination=0.0005).fit(X[:10000])  # Training only on 'normal' images
 
 # Make predictions
 pred = clf.predict(X)
