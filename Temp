@@ -1,6 +1,20 @@
-!pip install torch-scatter -f https://data.pyg.org/whl/torch-{torch.__version__}.html
-!pip install torch-sparse -f https://data.pyg.org/whl/torch-{torch.__version__}.html
-!pip install torch-cluster -f https://data.pyg.org/whl/torch-{torch.__version__}.html
-!pip install git+https://github.com/pyg-team/pytorch_geometric.git
-!pip install dgl
-!pip install optuna
+import numpy as np
+from scipy import stats
+
+# Baseline data: These are the 'normal' test scores from previous batches of students.
+baseline_scores = np.array([70, 75, 80, 77, 89])
+
+# New data: These are the test scores of the current batch of students.
+new_scores = np.array([80, 85, 90, 100, 20])
+
+# Calculate the mean and standard deviation of the baseline data.
+mean_baseline = np.mean(baseline_scores)
+std_dev_baseline = np.std(baseline_scores)
+
+# Calculate Z-Scores for the new data based on the baseline
+z_scores = (new_scores - mean_baseline) / std_dev_baseline
+
+# Find anomalies: Data points that have a Z-Score greater than 2 or less than -2
+anomalies_zscore = new_scores[np.abs(z_scores) > 2]
+
+print("Anomalous data points:", anomalies_zscore)
