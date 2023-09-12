@@ -1,43 +1,42 @@
-from sklearn.ensemble import IsolationForest
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+from statsmodels.tsa.arima.model import ARIMA
 
-# Function to display images
-def display_image(image, title):
-    plt.imshow(image, cmap='gray')
-    plt.title(title)
-    plt.axis('off')
-    plt.show()
+# Generate synthetic time-series data with anomalies
+np.random.seed(0)
+N = 100
+x = np.linspace(0, 4 * np.pi, N)
+y = np.sin(x) + 0.5 * np.random.normal(size=N)
+y[20] = 3
+y[40] = -3
 
-# Generate synthetic 'normal' images (10000 images of 5x5 pixels)
-normal_images = np.random.normal(loc=0.5, scale=0.1, size=(10000, 5, 5))
+# Create a pandas DataFrame
+df = pd.DataFrame({'value': y})
 
-# Generate synthetic 'anomalous' images (5 images of 5x5 pixels)
-anomalous_images = np.random.normal(loc=0.5, scale=0.1, size=(5, 5, 5))
+# Fit an ARIMA model
+model = ARIMA(df['value'], order=(5,1,0))
+model_fit = model.fit()
 
-# Explicitly add a dark stripe along the diagonal
-for img in anomalous_images:
-    np.fill_diagonal(img, 0)
+# Get residuals (prediction errors)
+residuals = pd.Series(model_fit.fittedvalues, copy=True)
+residuals = residuals - df['value']
 
-# Combine into one dataset
-all_images = np.concatenate([normal_images, anomalous_images], axis=0)
+# Calculate Z-scores of residuals
+z_scores = (residuals - np.mean(residuals)) / np.std(residuals)
 
-# Reshape images for Isolation Forest
-X = all_images.reshape((all_images.shape[0], -1))
+# Set a threshold for anomaly detection
+threshold = 2
 
-# Train Isolation Forest
-clf = IsolationForest(contamination=0.0005).fit(X[:10000])  # Training only on 'normal' images
+# Identify anomalies
+anomalies = np.where(np.abs(z_scores) > threshold)[0]
 
-# Make predictions
-pred = clf.predict(X)
-
-# Find anomalous images
-anomalous_indices = np.where(pred == -1)[0]
-
-# Display the first 3 'normal' images
-for i in range(3):
-    display_image(normal_images[i], f'Normal Image {i+1}')
-
-# Display an identified 'anomalous' image
-if len(anomalous_indices) > 0:
-    display_image(all_images[anomalous_indices[-1]], 'Identified Anomalous Image')
+# Plotting
+plt.figure(figsize=(14, 8))
+plt.plot(x, y, label='Original Data')
+plt.scatter(x[anomalies], y[anomalies], color='red', label='Anomalies')
+plt.title('Time-Series Anomaly Detection with ARIMA')
+plt.xlabel('Time')
+plt.ylabel('Value')
+plt.legend()
+plt.show()
