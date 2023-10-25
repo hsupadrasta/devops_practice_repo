@@ -1,27 +1,10 @@
-# Function to find the closest element in a given direction
-def find_closest(element, elements, direction):
-    closest = None
-    closest_distance = float("inf")
-    x, y = centers[element]
+def highlight(element):
+    driver.execute_script("""
+        var elem = arguments[0];
+        var original_style = elem.getAttribute('style');
+        elem.setAttribute('style', original_style + '; border: 2px solid cyan;');
+    """, element)
 
-    for other in elements:
-        if other == element:
-            continue  # Skip the same element
-        other_x, other_y = centers[other]
-        
-        if direction == "left" and other_x < x:
-            distance = x - other_x
-        elif direction == "right" and other_x > x:
-            distance = other_x - x
-        elif direction == "up" and other_y < y:
-            distance = y - other_y
-        elif direction == "down" and other_y > y:
-            distance = other_y - y
-        else:
-            continue  # Wrong direction
-        
-        if distance < closest_distance:
-            closest = other
-            closest_distance = distance
-
-    return closest
+# Highlight all leaf elements
+for element in leaf_elements:
+    highlight(element)
