@@ -1,47 +1,74 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-from statsmodels.tsa.arima.model import ARIMA
+import csv
+from selenium import webdriver
 
-# Generate synthetic time-series data with more data points
-np.random.seed(0)
-N = 500  # Increased number of data points
-x = np.linspace(0, 4 * np.pi, N)
-y = np.sin(x) + 0.5 * np.random.normal(size=N)
+# Initialize WebDriver
+driver = webdriver.Chrome(executable_path='/path/to/chromedriver')
+driver.get('https://example.com')  # Replace with your URL
 
-# Function to introduce contextual anomalies
-def introduce_contextual_anomalies(data, start_idx, end_idx, anomaly_value):
-    data[start_idx:end_idx] = anomaly_value
+# Get all elements
+elements = driver.find_elements_by_xpath("//*")
 
-# Introduce a contextual anomaly
-introduce_contextual_anomalies(y, 150, 200, 2.5)
+# Function to get the center point of an element
+def get_center(element):
+    rect = element.rect
+    return (rect["x"] + rect["width"] / 2, rect["y"] + rect["height"] / 2)
 
-# Create a pandas DataFrame
-df = pd.DataFrame({'value': y})
+# Function to find the closest element in a given direction
+def find_closest(element, elements, direction):
+    closest = None
+    closest_distance = float("inf")
+    x, y = get_center(element)
 
-# Fit an ARIMA model
-model = ARIMA(df['value'], order=(5, 1, 0))
-model_fit = model.fit()
+    for other in elements:
+        if other == element:
+            continue  # Skip the same element
+        other_x, other_y = get_center(other)
+        if direction == "left" and other_x < x:
+            distance = x - other_x
+        elif direction == "right" and other_x > x:
+            distance = other_x - x
+        elif direction == "up" and other_y < y:
+            distance = y - other_y
+        elif direction == "down" and other_y > y:
+            distance = other_y - y
+        else:
+            continue  # Wrong direction
+        if distance < closest_distance:
+            closest = other
+            closest_distance = distance
 
-# Get residuals (prediction errors)
-residuals = pd.Series(model_fit.fittedvalues, copy=True)
-residuals = residuals - df['value']
+    return closest
 
-# Calculate Z-scores of residuals
-z_scores = (residuals - np.mean(residuals)) / np.std(residuals)
+# Open CSV file for writing
+with open('elements.csv', 'w', newline='', encoding="UTF-8") as file:
+    writer = csv.writer(file)
+    writer.writerow(["Index", "Tag", "Location", "Area", "Text", "Class", "Top", "Bottom", "Left", "Right"])
 
-# Set a threshold for anomaly detection
-threshold = 2
+    for index, element in enumerate(elements):
+        # Get list of child elements
+        webEleList = element.find_elements_by_xpath(".//*")
 
-# Identify anomalies
-anomalies = np.where(np.abs(z_scores) > threshold)[0]
+        # Check if the element has no children (i.e., it's a base level element)
+        if len(webEleList) == 0 and element.is_displayed():
+            top_element = find_closest(element, elements, "up")
+            bottom_element = find_closest(element, elements, "down")
+            left_element = find_closest(element, elements, "left")
+            right_element = find_closest(element, elements, "right")
 
-# Plotting
-plt.figure(figsize=(14, 8))
-plt.plot(x, y, label='Synthetic Data')
-plt.scatter(x[anomalies], y[anomalies], color='red', label='Contextual Anomalies')
-plt.title('Time-Series Anomaly Detection with ARIMA (Contextual Anomaly)')
-plt.xlabel('Time')
-plt.ylabel('Value')
-plt.legend()
-plt.show()
+            writer.writerow([
+                index,
+                element.tag_name,
+                element.location,
+                element.size,
+                element.text,
+                element.get_attribute('class'),
+                elements.index(top_element) if top_element else 'None',
+                elements.index(bottom_element) if bottom_element else 'None',
+                elements.index(left_element) if left_element else 'None',
+                elements.index(right_element) if right_element else 'None'
+            ])
+
+            print(element.tag_name, element.location, element.size, element.text, element.get_attribute('class'))
+
+# Quit the driver
+driver.quit()
