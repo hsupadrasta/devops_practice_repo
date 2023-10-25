@@ -1,20 +1,10 @@
-import csv
-from selenium import webdriver
-
-# Initialize WebDriver
-driver = webdriver.Chrome(executable_path='/path/to/chromedriver')
-driver.get('https://example.com')  # Replace with your URL
-
-# Get all elements
-elements = driver.find_elements_by_xpath("//*")
-
 # Function to get the center point of an element
 def get_center(element):
     rect = element.rect
     return (rect["x"] + rect["width"] / 2, rect["y"] + rect["height"] / 2)
 
 # Identify leaf elements
-leaf_elements = [element for element in elements if not element.find_elements_by_xpath(".//*")]
+leaf_elements = [element for element in elements if not element.find_elements_by_xpath(".//*") and element.is_displayed()]
 
 # Precompute centers for leaf elements
 centers = {element: get_center(element) for element in leaf_elements}
@@ -29,7 +19,7 @@ def find_closest(element, elements, direction):
         if other == element:
             continue  # Skip the same element
         other_x, other_y = centers[other]
-        # ... rest of your code ...
+        # ... rest of the code for checking directions and distances ...
 
 # Open CSV file for writing
 with open('elements.csv', 'w', newline='', encoding="UTF-8") as file:
@@ -37,7 +27,22 @@ with open('elements.csv', 'w', newline='', encoding="UTF-8") as file:
     writer.writerow(["Index", "Tag", "Location", "Area", "Text", "Class", "Top", "Bottom", "Left", "Right"])
 
     for index, element in enumerate(leaf_elements):
-        # ... rest of your code ...
+        top_element = find_closest(element, leaf_elements, "up")
+        bottom_element = find_closest(element, leaf_elements, "down")
+        left_element = find_closest(element, leaf_elements, "left")
+        right_element = find_closest(element, leaf_elements, "right")
 
-# Quit the driver
-driver.quit()
+        writer.writerow([
+            index,
+            element.tag_name,
+            element.location,
+            element.size,
+            element.text,
+            element.get_attribute('class'),
+            leaf_elements.index(top_element) if top_element else 'None',
+            leaf_elements.index(bottom_element) if bottom_element else 'None',
+            leaf_elements.index(left_element) if left_element else 'None',
+            leaf_elements.index(right_element) if right_element else 'None'
+        ])
+
+        print(element.tag_name, element.location, element.size, element.text, element.get_attribute('class'))
