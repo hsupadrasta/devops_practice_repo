@@ -13,62 +13,22 @@ def get_center(element):
     rect = element.rect
     return (rect["x"] + rect["width"] / 2, rect["y"] + rect["height"] / 2)
 
+# Precompute centers
+centers = {element: get_center(element) for element in elements}
+
 # Function to find the closest element in a given direction
 def find_closest(element, elements, direction):
     closest = None
     closest_distance = float("inf")
-    x, y = get_center(element)
+    x, y = centers[element]
 
     for other in elements:
         if other == element:
             continue  # Skip the same element
-        other_x, other_y = get_center(other)
-        if direction == "left" and other_x < x:
-            distance = x - other_x
-        elif direction == "right" and other_x > x:
-            distance = other_x - x
-        elif direction == "up" and other_y < y:
-            distance = y - other_y
-        elif direction == "down" and other_y > y:
-            distance = other_y - y
-        else:
-            continue  # Wrong direction
-        if distance < closest_distance:
-            closest = other
-            closest_distance = distance
+        other_x, other_y = centers[other]
+        # ... rest of your code ...
 
-    return closest
-
-# Open CSV file for writing
-with open('elements.csv', 'w', newline='', encoding="UTF-8") as file:
-    writer = csv.writer(file)
-    writer.writerow(["Index", "Tag", "Location", "Area", "Text", "Class", "Top", "Bottom", "Left", "Right"])
-
-    for index, element in enumerate(elements):
-        # Get list of child elements
-        webEleList = element.find_elements_by_xpath(".//*")
-
-        # Check if the element has no children (i.e., it's a base level element)
-        if len(webEleList) == 0 and element.is_displayed():
-            top_element = find_closest(element, elements, "up")
-            bottom_element = find_closest(element, elements, "down")
-            left_element = find_closest(element, elements, "left")
-            right_element = find_closest(element, elements, "right")
-
-            writer.writerow([
-                index,
-                element.tag_name,
-                element.location,
-                element.size,
-                element.text,
-                element.get_attribute('class'),
-                elements.index(top_element) if top_element else 'None',
-                elements.index(bottom_element) if bottom_element else 'None',
-                elements.index(left_element) if left_element else 'None',
-                elements.index(right_element) if right_element else 'None'
-            ])
-
-            print(element.tag_name, element.location, element.size, element.text, element.get_attribute('class'))
+# ... rest of your code ...
 
 # Quit the driver
 driver.quit()
