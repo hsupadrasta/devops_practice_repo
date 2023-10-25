@@ -13,8 +13,11 @@ def get_center(element):
     rect = element.rect
     return (rect["x"] + rect["width"] / 2, rect["y"] + rect["height"] / 2)
 
-# Precompute centers
-centers = {element: get_center(element) for element in elements}
+# Identify leaf elements
+leaf_elements = [element for element in elements if not element.find_elements_by_xpath(".//*")]
+
+# Precompute centers for leaf elements
+centers = {element: get_center(element) for element in leaf_elements}
 
 # Function to find the closest element in a given direction
 def find_closest(element, elements, direction):
@@ -28,7 +31,13 @@ def find_closest(element, elements, direction):
         other_x, other_y = centers[other]
         # ... rest of your code ...
 
-# ... rest of your code ...
+# Open CSV file for writing
+with open('elements.csv', 'w', newline='', encoding="UTF-8") as file:
+    writer = csv.writer(file)
+    writer.writerow(["Index", "Tag", "Location", "Area", "Text", "Class", "Top", "Bottom", "Left", "Right"])
+
+    for index, element in enumerate(leaf_elements):
+        # ... rest of your code ...
 
 # Quit the driver
 driver.quit()
