@@ -1,14 +1,3 @@
-# Function to get the center point of an element
-def get_center(element):
-    rect = element.rect
-    return (rect["x"] + rect["width"] / 2, rect["y"] + rect["height"] / 2)
-
-# Identify leaf elements
-leaf_elements = [element for element in elements if not element.find_elements_by_xpath(".//*") and element.is_displayed()]
-
-# Precompute centers for leaf elements
-centers = {element: get_center(element) for element in leaf_elements}
-
 # Function to find the closest element in a given direction
 def find_closest(element, elements, direction):
     closest = None
@@ -19,30 +8,20 @@ def find_closest(element, elements, direction):
         if other == element:
             continue  # Skip the same element
         other_x, other_y = centers[other]
-        # ... rest of the code for checking directions and distances ...
+        
+        if direction == "left" and other_x < x:
+            distance = x - other_x
+        elif direction == "right" and other_x > x:
+            distance = other_x - x
+        elif direction == "up" and other_y < y:
+            distance = y - other_y
+        elif direction == "down" and other_y > y:
+            distance = other_y - y
+        else:
+            continue  # Wrong direction
+        
+        if distance < closest_distance:
+            closest = other
+            closest_distance = distance
 
-# Open CSV file for writing
-with open('elements.csv', 'w', newline='', encoding="UTF-8") as file:
-    writer = csv.writer(file)
-    writer.writerow(["Index", "Tag", "Location", "Area", "Text", "Class", "Top", "Bottom", "Left", "Right"])
-
-    for index, element in enumerate(leaf_elements):
-        top_element = find_closest(element, leaf_elements, "up")
-        bottom_element = find_closest(element, leaf_elements, "down")
-        left_element = find_closest(element, leaf_elements, "left")
-        right_element = find_closest(element, leaf_elements, "right")
-
-        writer.writerow([
-            index,
-            element.tag_name,
-            element.location,
-            element.size,
-            element.text,
-            element.get_attribute('class'),
-            leaf_elements.index(top_element) if top_element else 'None',
-            leaf_elements.index(bottom_element) if bottom_element else 'None',
-            leaf_elements.index(left_element) if left_element else 'None',
-            leaf_elements.index(right_element) if right_element else 'None'
-        ])
-
-        print(element.tag_name, element.location, element.size, element.text, element.get_attribute('class'))
+    return closest
