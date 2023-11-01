@@ -1,41 +1,26 @@
+import csv
+import networkx as nx
+import matplotlib.pyplot as plt
 
-Hashing for image similarity involves generating a fixed-length hash code or signature that represents the content of an image in a way that similar images produce similar hashes. Here's a simplified implementation using a perceptual hashing method called dHash (difference hash):
+# Create an empty graph
+G = nx.Graph()
 
-1. **Resize the Image:** Start by resizing the input image to a fixed size. For simplicity, you can choose a small size like 8x8 pixels.
+# Read the CSV file and add nodes and edges to the graph
+with open('your_csv_file.csv', 'r') as csvfile:
+    csvreader = csv.reader(csvfile)
+    for row in csvreader:
+        entity1 = row[0].strip()
+        entity2 = row[2].strip()
+        impact = row[1].strip()
+        
+        # Add nodes and edges to the graph
+        G.add_node(entity1)
+        G.add_node(entity2)
+        G.add_edge(entity1, entity2, impact=impact)
 
-2. **Convert to Grayscale:** Convert the resized image to grayscale if it's not already in grayscale. This simplifies the process.
-
-3. **Calculate Pixel Differences:** Calculate the difference between adjacent pixels in the image. You can do this row-wise or column-wise, depending on your preference. For each pair of adjacent pixels, if the left pixel is brighter than the right pixel, assign it a value of 1; otherwise, assign 0.
-
-4. **Generate the Hash:** Combine the binary values obtained from step 3 to create a hash. This can be done by treating the binary values as bits of an integer and converting it to a hexadecimal or binary string.
-
-Here's a Python example using the popular Pillow library for image processing:
-
-```python
-from PIL import Image
-
-def dhash(image_path, hash_size=8):
-    # Open and resize the image
-    image = Image.open(image_path).convert('L')
-    image = image.resize((hash_size + 1, hash_size), Image.ANTIALIAS)
-
-    # Calculate differences and generate hash
-    diff_values = []
-    pixels = list(image.getdata())
-    for row in range(hash_size):
-        for col in range(hash_size):
-            left_pixel = pixels[row * (hash_size + 1) + col]
-            right_pixel = pixels[row * (hash_size + 1) + col + 1]
-            diff_values.append(int(left_pixel > right_pixel))
-    
-    # Convert binary list to a hexadecimal hash
-    hash_hex = ''.join([str(val) for val in diff_values])
-    return hash_hex
-
-# Usage
-image_path = 'your_image.jpg'
-hash_code = dhash(image_path)
-print(f'dHash: {hash_code}')
-```
-
-This code will give you a dHash for the input image. Similar images should have similar dHashes, making it a straightforward way to measure image similarity. Remember to adjust the `hash_size` parameter to suit your needs, as a larger hash size might capture more details but be less robust to minor changes.
+# Visualize the graph (optional)
+pos = nx.spring_layout(G)
+labels = nx.get_edge_attributes(G, 'impact')
+nx.draw(G, pos, with_labels=True, node_size=800, node_color='skyblue', font_size=10)
+nx.draw_networkx_edge_labels(G, pos, edge_labels=labels, font_size=8, font_color='red')
+plt.show()
