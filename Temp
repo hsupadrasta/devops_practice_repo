@@ -1,26 +1,63 @@
-import csv
-import networkx as nx
-import matplotlib.pyplot as plt
+import pandas as pd
 
-# Create an empty graph
-G = nx.Graph()
+# Assuming old_data and new_data are DataFrames
+mismatched_old_elements = []
+extra_new_elements = []
+tolerance = 0.2
 
-# Read the CSV file and add nodes and edges to the graph
-with open('your_csv_file.csv', 'r') as csvfile:
-    csvreader = csv.reader(csvfile)
-    for row in csvreader:
-        entity1 = row[0].strip()
-        entity2 = row[2].strip()
-        impact = row[1].strip()
-        
-        # Add nodes and edges to the graph
-        G.add_node(entity1)
-        G.add_node(entity2)
-        G.add_edge(entity1, entity2, impact=impact)
+# Check for mismatched or missing elements in old_data
+for old_index in range(len(old_data)):
+    selected_element = old_data.iloc[old_index]['Text']
+    matching_elements = new_data[new_data['Text'] == selected_element]
 
-# Visualize the graph (optional)
-pos = nx.spring_layout(G)
-labels = nx.get_edge_attributes(G, 'impact')
-nx.draw(G, pos, with_labels=True, node_size=800, node_color='skyblue', font_size=10)
-nx.draw_networkx_edge_labels(G, pos, edge_labels=labels, font_size=8, font_color='red')
-plt.show()
+    old_x = old_data.iloc[old_index]['X']
+    old_y = old_data.iloc[old_index]['Y']
+    old_height = old_data.iloc[old_index]['H']
+    old_width = old_data.iloc[old_index]['W']
+
+    matched = False
+
+    for _, row in matching_elements.iterrows():
+        if (
+            abs(row['X'] - old_x) <= tolerance * old_x and 
+            abs(row['Y'] - old_y) <= tolerance * old_y and 
+            abs(row['H'] - old_height) <= tolerance * old_height and 
+            abs(row['W'] - old_width) <= 0.5 * old_width
+        ):
+            matched = True
+            break
+
+    if not matched:
+        mismatched_old_elements.append(old_data.iloc[old_index])
+
+# Check for extra elements in new_data
+for new_index in range(len(new_data)):
+    selected_element = new_data.iloc[new_index]['Text']
+    matching_elements = old_data[old_data['Text'] == selected_element]
+
+    new_x = new_data.iloc[new_index]['X']
+    new_y = new_data.iloc[new_index]['Y']
+    new_height = new_data.iloc[new_index]['H']
+    new_width = new_data.iloc[new_index]['W']
+
+    matched = False
+
+    for _, row in matching_elements.iterrows():
+        if (
+            abs(row['X'] - new_x) <= tolerance * new_x and 
+            abs(row['Y'] - new_y) <= tolerance * new_y and 
+            abs(row['H'] - new_height) <= tolerance * new_height and 
+            abs(row['W'] - new_width) <= 0.5 * new_width
+        ):
+            matched = True
+            break
+
+    if not matched:
+        extra_new_elements.append(new_data.iloc[new_index])
+
+# Convert lists to DataFrames and export to CSV
+mismatched_old_df = pd.DataFrame(mismatched_old_elements)
+extra_new_df = pd.DataFrame(extra_new_elements)
+
+mismatched_old_df.to_csv('mismatched_old_elements.csv', index=False)
+extra_new_df.to_csv('extra_new_elements.csv', index=False)
