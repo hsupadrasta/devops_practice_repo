@@ -1,63 +1,81 @@
-import pandas as pd
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import java.io.FileOutputStream;
+import java.sql.*;
 
-# Assuming old_data and new_data are DataFrames
-mismatched_old_elements = []
-extra_new_elements = []
-tolerance = 0.2
+public class DatabaseExcelExporter {
+    private String url;
+    private String user;
+    private String password;
+    private String query;
+    private String excelFilePath;
 
-# Check for mismatched or missing elements in old_data
-for old_index in range(len(old_data)):
-    selected_element = old_data.iloc[old_index]['Text']
-    matching_elements = new_data[new_data['Text'] == selected_element]
+    public DatabaseExcelExporter(String url, String user, String password, String query, String excelFilePath) {
+        this.url = url;
+        this.user = user;
+        this.password = password;
+        this.query = query;
+        this.excelFilePath = excelFilePath;
+    }
 
-    old_x = old_data.iloc[old_index]['X']
-    old_y = old_data.iloc[old_index]['Y']
-    old_height = old_data.iloc[old_index]['H']
-    old_width = old_data.iloc[old_index]['W']
+    public void export() {
+        try (Connection conn = DriverManager.getConnection(url, user, password);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
 
-    matched = False
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("Results");
 
-    for _, row in matching_elements.iterrows():
-        if (
-            abs(row['X'] - old_x) <= tolerance * old_x and 
-            abs(row['Y'] - old_y) <= tolerance * old_y and 
-            abs(row['H'] - old_height) <= tolerance * old_height and 
-            abs(row['W'] - old_width) <= 0.5 * old_width
-        ):
-            matched = True
-            break
+            ResultSetMetaData metaData = rs.getMetaData();
+            int columnCount = metaData.getColumnCount();
 
-    if not matched:
-        mismatched_old_elements.append(old_data.iloc[old_index])
+            createHeaderRow(sheet, metaData, columnCount);
+            writeDataRows(rs, workbook, sheet, columnCount);
 
-# Check for extra elements in new_data
-for new_index in range(len(new_data)):
-    selected_element = new_data.iloc[new_index]['Text']
-    matching_elements = old_data[old_data['Text'] == selected_element]
+            try (FileOutputStream outputStream = new FileOutputStream(excelFilePath)) {
+                workbook.write(outputStream);
+            }
+            workbook.close();
 
-    new_x = new_data.iloc[new_index]['X']
-    new_y = new_data.iloc[new_index]['Y']
-    new_height = new_data.iloc[new_index]['H']
-    new_width = new_data.iloc[new_index]['W']
+            System.out.println("Data exported to Excel file successfully!");
+        } catch (SQLException e) {
+            System.err.println("Database connection error: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Excel file error: " + e.getMessage());
+        }
+    }
 
-    matched = False
+    private void createHeaderRow(Sheet sheet, ResultSetMetaData metaData, int columnCount) throws SQLException {
+        Row headerRow = sheet.createRow(0);
+        for (int col = 1; col <= columnCount; col++) {
+            Cell cell = headerRow.createCell(col - 1);
+            cell.setCellValue(metaData.getColumnName(col));
+        }
+    }
 
-    for _, row in matching_elements.iterrows():
-        if (
-            abs(row['X'] - new_x) <= tolerance * new_x and 
-            abs(row['Y'] - new_y) <= tolerance * new_y and 
-            abs(row['H'] - new_height) <= tolerance * new_height and 
-            abs(row['W'] - new_width) <= 0.5 * new_width
-        ):
-            matched = True
-            break
+    private void writeDataRows(ResultSet rs, Workbook workbook, Sheet sheet, int columnCount) throws SQLException {
+        int rowIndex = 1;
+        while (rs.next()) {
+            Row row = sheet.createRow(rowIndex++);
 
-    if not matched:
-        extra_new_elements.append(new_data.iloc[new_index])
+            for (int col = 1; col <= columnCount; col++) {
+                Cell cell = row.createCell(col - 1);
+                cell.setCellValue(rs.getString(col)); // For simplicity, getting all as String
+                // Can be enhanced to handle different data types
+            }
+        }
+    }
+}
 
-# Convert lists to DataFrames and export to CSV
-mismatched_old_df = pd.DataFrame(mismatched_old_elements)
-extra_new_df = pd.DataFrame(extra_new_elements)
+public class DatabaseToExcelApp {
+    public static void main(String[] args) {
+        String url = "jdbc:oracle:thin:@your_oracle_db_url:1521:your_db_name";
+        String user = "your_username";
+        String password = "your_password";
+        String query = "SELECT * FROM your_table"; // Replace with your actual query
+        String excelFilePath = "results.xlsx";
 
-mismatched_old_df.to_csv('mismatched_old_elements.csv', index=False)
-extra_new_df.to_csv('extra_new_elements.csv', index=False)
+        DatabaseExcelExporter exporter = new DatabaseExcelExporter(url, user, password, query, excelFilePath);
+        exporter.export();
+    }
+}
