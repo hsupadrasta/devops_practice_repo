@@ -1,42 +1,30 @@
-Creating a CSV file with all dependencies from a SQL Server database is a practical way to analyze and understand the relationships between different tables. Here's a straightforward approach to achieve this:
-
-1. **Query the Database for Dependencies:**
-   - Use SQL Server's system views to extract dependency information. The views `sys.foreign_keys` and `sys.foreign_key_columns` are particularly useful for understanding relationships between tables.
-   - A basic query can be written to join these views and extract relevant information like table names, column names, and the type of relationship.
-
-2. **Export Query Results to CSV:**
-   - After running the query in SQL Server Management Studio (SSMS), you can export the results directly to a CSV file using the built-in export wizard.
-   - Alternatively, if you're comfortable with scripting, you can use PowerShell or a similar tool to run the query and export the results.
-
-3. **Automate the Process (Optional):**
-   - If you need to perform this task regularly, consider automating it. You can write a script in PowerShell, Python, or another language to execute the SQL query and save the output to a CSV file.
-   - Scheduling the script to run at regular intervals can be done using Windows Task Scheduler or a similar tool.
-
-4. **Integrating with Your Impact Analysis System:**
-   - Once you have the CSV file, you can use it to build knowledge graphs or integrate it with your impact analysis system.
-   - Tools like Python can be used to parse the CSV and create graphs or other data structures that represent the dependencies.
-
-Here's a sample SQL query to get you started:
-
-```sql
 SELECT 
     fk.name AS ForeignKey,
     tp.name AS ParentTable,
+    ep_parent.value AS ParentTableDescription,
     cp.name AS ParentColumn,
+    ep_parent_col.value AS ParentColumnDescription,
     tr.name AS ReferencedTable,
-    cr.name AS ReferencedColumn
+    ep_ref.value AS ReferencedTableDescription,
+    cr.name AS ReferencedColumn,
+    ep_ref_col.value AS ReferencedColumnDescription
 FROM 
     sys.foreign_keys AS fk
 INNER JOIN 
     sys.tables AS tp ON fk.parent_object_id = tp.object_id
+LEFT JOIN 
+    sys.extended_properties AS ep_parent ON ep_parent.major_id = tp.object_id AND ep_parent.minor_id = 0
 INNER JOIN 
     sys.tables AS tr ON fk.referenced_object_id = tr.object_id
+LEFT JOIN 
+    sys.extended_properties AS ep_ref ON ep_ref.major_id = tr.object_id AND ep_ref.minor_id = 0
 INNER JOIN 
     sys.foreign_key_columns AS fkc ON fkc.constraint_object_id = fk.object_id
 INNER JOIN 
     sys.columns AS cp ON fkc.parent_column_id = cp.column_id AND fkc.parent_object_id = cp.object_id
+LEFT JOIN 
+    sys.extended_properties AS ep_parent_col ON ep_parent_col.major_id = cp.object_id AND ep_parent_col.minor_id = cp.column_id
 INNER JOIN 
     sys.columns AS cr ON fkc.referenced_column_id = cr.column_id AND fkc.referenced_object_id = cr.object_id
-```
-
-This query will give you a list of foreign keys, the tables they are in, and the tables they reference. From there, you can export the data to CSV and utilize it as needed in your application. Remember, the simpler the implementation, the better; avoid overcomplicating the query or the export process unless necessary for your specific use case.
+LEFT JOIN 
+    sys.extended_properties AS ep_ref_col ON ep_ref_col.major_id = cr.object_id AND ep_ref_col.minor_id = cr.column_id
