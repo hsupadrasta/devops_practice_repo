@@ -1,14 +1,14 @@
-Certainly! Here is how you might structure the section for the "Hybrid of UI/DB and API Test Cases" in your API Test Strategy document:
-
----
-
-**Leverage Hybrid Testing to Ensure Coherent Functionality Across UI, Database, and API Layers**
-- **Objectives**:
-  - Design and implement a set of hybrid test cases that cover the user interface, database integrity, and API interactions to ensure seamless integration and interaction across all layers of the application.
-  - Develop a series of automated hybrid test flows that simulate end-user actions on the UI, verify the resulting database transactions, and ensure consistency and accuracy of API responses.
-  - Create validation mechanisms to check data consistency across the UI, API responses, and database states after each test scenario to catch any discrepancies.
-  - Incorporate negative testing scenarios in hybrid tests to validate system behavior under invalid input or unexpected usage patterns, ensuring robust error handling and data validation.
-  - Establish a baseline for performance across the integrated UI, database, and API components, and perform stress testing to evaluate the overall system performance under various load conditions.
-  - Set up a monitoring system that can track and log the interaction between the UI, database, and API layers during test execution, allowing for real-time analysis and post-test forensic review.
-
-By establishing such objectives, the strategy emphasizes a comprehensive approach to testing that mirrors the complex interactions a user might have with the application. This ensures that all components not only work well independently but also function correctly as a whole when interacting with one another.
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Happy Birthday</title>
+  <script type="text/javascript">
+    function showBirthdayMessage() {
+      alert("Happy Birthday!");
+    }
+  </script>
+</head>
+<body onload="showBirthdayMessage();">
+  <p>If you see this, the message box should have already appeared.</p>
+</body>
+</html>
