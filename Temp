@@ -1,14 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Happy Birthday</title>
-  <script type="text/javascript">
-    function showBirthdayMessage() {
-      alert("Happy Birthday!");
-    }
-  </script>
-</head>
-<body onload="showBirthdayMessage();">
-  <p>If you see this, the message box should have already appeared.</p>
-</body>
-</html>
+var outlookApp = new ActiveXObject("Outlook.Application");
+var mailItem = outlookApp.CreateItem(0); // 0 = olMailItem
+
+mailItem.Subject = "Subject of the email";
+mailItem.Body = "This is the body of the email.";
+mailItem.To = "example@example.com";
+
+mailItem.Send();
