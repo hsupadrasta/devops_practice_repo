@@ -1,62 +1,28 @@
-Here's a rephrased and elaborated version of the ideas shared by the team:
+Set Outlook = CreateObject("Outlook.Application")
+Set Mail = Outlook.CreateItem(0)
 
-1. Instead of fully rescanning the page after updates, the app should be capable of remapping the components within TOSCA to enhance efficiency.
-   
-   *Enhancement Suggestion*: To streamline updates within the application, a remapping feature should be integrated. This would allow the components to be updated without the need for a complete page rescan, improving the efficiency of the TOSCA testing process.
+' Set email properties
+Mail.Subject = "Test Email"
+Mail.Body = "This is a test email sent from VBScript."
+Mail.To = "recipient@example.com"
 
-2. Implement a replicator for cross-browser feature testing to execute multiple tests simultaneously.
-   
-   *Enhancement Suggestion*: A replicator tool could be developed to facilitate simultaneous cross-browser testing. This would enable the execution of multiple tests in different browser environments at once, increasing the test coverage and saving time.
+' Send the email
+Mail.Send
 
-3. Utilize video or transient screenshots for capturing dynamic behavior during testing, as opposed to static screenshots.
-   
-   *Enhancement Suggestion*: To better capture the dynamic aspects of app behavior, consider using transient screenshots or video recordings. This approach would be more effective than static screenshots for documenting issues and understanding user interactions during exploratory testing with TOSCA.
+' Wait for the email to be sent and appear in the Sent Items folder
+WScript.Sleep 5000
 
-4. For pulling data from images, Tableau Automation could be employed, improving data extraction efficiency.
-   
-   *Enhancement Suggestion*: Leveraging Tableau Automation to interpret and extract data from images could be a significant improvement. This technology would facilitate the conversion of visual data into actionable insights more efficiently than manual methods.
+' Access the Sent Items folder
+Set Namespace = Outlook.GetNamespace("MAPI")
+Set SentItems = Namespace.GetDefaultFolder(5).Items
 
-5. To ensure no data loss, capturing detailed Minutes of Meeting (MOM) with precise and comprehensive notes is crucial.
-   
-   *Enhancement Suggestion*: Enhancing the documentation process for meetings to ensure all data is precisely and comprehensively captured. By focusing on detailed MOM, there is less risk of overlooking critical information during the decision-making process.
+' Find and delete the sent email
+For Each Item In SentItems
+    If Item.Subject = "Test Email" And Item.Body = "This is a test email sent from VBScript." Then
+        Item.Delete
+        Exit For
+    End If
+Next
 
-6. Address synchronization issues within the app to improve its reliability and user experience.
-   
-   *Enhancement Suggestion*: Investigating and resolving synchronization problems within the app is vital. Enhancing the app's synchronization capabilities would likely lead to a smoother user experience and more reliable performance.
-
-7. Address the lack of live tracking for cabs, considering the environmental concerns like pollution.
-   
-   *Enhancement Suggestion*: Implementing a live tracking feature for cabs could not only enhance service reliability but also contribute to environmental consciousness by potentially reducing unnecessary idling and optimizing routes, thus helping to decrease pollution.
-
-8. Evaluate the location feasibility of the Car Pool system in Bank-Ex-GIFT to ensure it caters to the needs of its users.
-   
-   *Enhancement Suggestion*: It may be beneficial to reassess the location of the Car Pool system at Bank-Ex-GIFT to ensure it is accessible and convenient for users. If the current location is too remote, considering a more central location could improve participation and efficiency.
-Here's a rephrased and elaborated version of the ideas shared:
-
-1. Implement a pre-order feature in the Food App to avoid waiting in line, which would also facilitate better food event organization.
-   
-   *Enhancement Suggestion*: A new functionality could be added to the Food App that allows users to place orders before arriving at the cafeteria, thus bypassing queues and reducing wait times. This feature would also be beneficial for organizing catering for events, ensuring food is prepared and distributed efficiently.
-
-2. Introduce a subscription-based app server monitoring tool to maintain app health across multiple platforms.
-   
-   *Enhancement Suggestion*: Development of a universal server pinger tool, available on a subscription basis, could be a strategic addition. This tool would ensure constant health checks of servers across various apps, providing real-time monitoring and maintenance capabilities.
-
-3. Automate the process of cleaning up test IDs with the ability to restore them later, ensuring database integrity.
-   
-   *Enhancement Suggestion*: Automating the cleanup and restoration of test IDs in the database could streamline the testing process. This feature would handle verification and insertion tasks, maintaining the integrity of the database while enabling efficient test management.
-
-4. Standardize the monitoring and reporting of MRA conditions on story or bug reports for better issue tracking and compliance management.
-   
-   *Enhancement Suggestion*: Implementing a standardized dashboard for monitoring and alerting MRA conditions related to story or bug reports could improve issue tracking. This system would facilitate deeper analysis and better communication with the release manager, enhancing compliance with MRA conditions.
-
-5. Utilize Litmus for dummy test reporting executions to identify potential issues in testing procedures.
-   
-   *Enhancement Suggestion*: Employing Litmus to conduct dummy test executions could help in pinpointing flaws within the testing procedures. This would enable teams to make necessary adjustments and improve the accuracy of test reporting.
-
-6. Improve the room booking process with automated systems for better resource management.
-   
-   *Enhancement Suggestion*: An automated room booking system could optimize the use of meeting spaces, leading to better resource management. By automating this process, organizations can minimize conflicts and maximize room usage efficiency.
-
-7. Reevaluate the anti-spam rules which are currently not effective, to ensure communication channels remain clear.
-   
-   *Enhancement Suggestion*: The current anti-spam measures in place appear to be ineffective, indicating a need for a thorough review and overhaul of the system. Enhancing these rules is critical to maintain the efficacy of communication channels and protect them from spam.
+Set Mail = Nothing
+Set Outlook = Nothing
