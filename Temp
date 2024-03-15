@@ -1,28 +1,37 @@
+To forward an email with high importance and then delete it using VBScript, you can modify the script as follows:
+
+```vbscript
 Set Outlook = CreateObject("Outlook.Application")
-Set Mail = Outlook.CreateItem(0)
-
-' Set email properties
-Mail.Subject = "Test Email"
-Mail.Body = "This is a test email sent from VBScript."
-Mail.To = "recipient@example.com"
-
-' Send the email
-Mail.Send
-
-' Wait for the email to be sent and appear in the Sent Items folder
-WScript.Sleep 5000
-
-' Access the Sent Items folder
 Set Namespace = Outlook.GetNamespace("MAPI")
-Set SentItems = Namespace.GetDefaultFolder(5).Items
 
-' Find and delete the sent email
-For Each Item In SentItems
-    If Item.Subject = "Test Email" And Item.Body = "This is a test email sent from VBScript." Then
-        Item.Delete
+' Access the Inbox folder
+Set Inbox = Namespace.GetDefaultFolder(6).Items
+
+' Find the email to forward
+For Each Mail In Inbox
+    If Mail.Subject = "Email Subject to Forward" Then
+        ' Forward the email
+        Set ForwardMail = Mail.Forward
+        ForwardMail.Subject = "Fwd: " & Mail.Subject
+        ForwardMail.Importance = 2 ' High importance
+        ForwardMail.Recipients.Add "recipient@example.com"
+        ForwardMail.Send
+        
+        ' Delete the original email
+        Mail.Delete
         Exit For
     End If
 Next
 
-Set Mail = Nothing
+Set Inbox = Nothing
+Set Namespace = Nothing
 Set Outlook = Nothing
+```
+
+In this script:
+
+- Replace `"Email Subject to Forward"` with the subject of the email you want to forward.
+- Replace `"recipient@example.com"` with the email address of the recipient to whom you want to forward the email.
+- The `Importance` property is set to `2` to indicate high importance. The values for the `Importance` property are: `0` (Low), `1` (Normal), and `2` (High).
+
+This script will search for an email with the specified subject in the Inbox, forward it with high importance to the specified recipient, and then delete the original email from the Inbox.
