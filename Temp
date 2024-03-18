@@ -1,37 +1,24 @@
-To forward an email with high importance and then delete it using VBScript, you can modify the script as follows:
+hhimport re
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
 
-```vbscript
-Set Outlook = CreateObject("Outlook.Application")
-Set Namespace = Outlook.GetNamespace("MAPI")
+def clean_text(text):
+    # Remove HTML tags
+    clean_text = re.sub('<.*?>', '', text)
+    # Remove non-alphanumeric characters and convert to lowercase
+    clean_text = re.sub(r'[^a-zA-Z0-9\s]', '', clean_text).lower()
+    # Tokenize the text
+    tokens = word_tokenize(clean_text)
+    # Remove stopwords
+    stop_words = set(stopwords.words('english'))
+    filtered_tokens = [word for word in tokens if word not in stop_words]
+    # Lemmatize the tokens
+    lemmatizer = WordNetLemmatizer()
+    lemmatized_tokens = [lemmatizer.lemmatize(token) for token in filtered_tokens]
+    return lemmatized_tokens
 
-' Access the Inbox folder
-Set Inbox = Namespace.GetDefaultFolder(6).Items
-
-' Find the email to forward
-For Each Mail In Inbox
-    If Mail.Subject = "Email Subject to Forward" Then
-        ' Forward the email
-        Set ForwardMail = Mail.Forward
-        ForwardMail.Subject = "Fwd: " & Mail.Subject
-        ForwardMail.Importance = 2 ' High importance
-        ForwardMail.Recipients.Add "recipient@example.com"
-        ForwardMail.Send
-        
-        ' Delete the original email
-        Mail.Delete
-        Exit For
-    End If
-Next
-
-Set Inbox = Nothing
-Set Namespace = Nothing
-Set Outlook = Nothing
-```
-
-In this script:
-
-- Replace `"Email Subject to Forward"` with the subject of the email you want to forward.
-- Replace `"recipient@example.com"` with the email address of the recipient to whom you want to forward the email.
-- The `Importance` property is set to `2` to indicate high importance. The values for the `Importance` property are: `0` (Low), `1` (Normal), and `2` (High).
-
-This script will search for an email with the specified subject in the Inbox, forward it with high importance to the specified recipient, and then delete the original email from the Inbox.
+# Example usage
+jira_story = "As a user, I want to be able to log in to the system."
+cleaned_story = clean_text(jira_story)
+print(cleaned_story)
